@@ -10,12 +10,18 @@ import 'express-async-errors';
 import { Server } from "socket.io";
 import { createClient } from 'redis';
 import { createAdapter } from '@socket.io/redis-adapter';
-import { config } from "./config"
 
-import { CustomError, IErrorResponse } from './shared/globals/helpers/error-handler';
+import { config } from '@root/config';
 import applicationRoutes from "./routes";
 import { NextFunction } from 'express';
 import Logger from 'bunyan';
+import { CustomError, IErrorResponse } from '@global/helpers/error-handler';
+
+
+
+
+
+// import { CustomError, IErrorResponse } from './shared/globals/helpers/error-handler';
 
 
 
@@ -38,7 +44,7 @@ export class ChatappServer {
         this.startServer(this.app)
     }
     private securityMiddleware(app: Application): void {
-        console.log("CONFIG.node_env", config.NODE_ENV === 'production')
+        console.log("CONFIG.node_env new updated.........", config.NODE_ENV === 'production')
         app.use(cookieSession({
 
             name: 'session',
@@ -130,12 +136,12 @@ export class ChatappServer {
             SERVER_PORT, () => {
                 log.info(`Server is running on port ${SERVER_PORT}`);
             }
-        ); 
+        );
 
     }
 
     private socketIOConnections(io: Server): void {
-
+        log.info('socketIOConnections')
     }
 
 

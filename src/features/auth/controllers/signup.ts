@@ -52,7 +52,7 @@ export class SignUp {
       throw new BadRequestError("File upload: Invalid credentials");
     }
 
-    // add to redis cache
+    // // add to redis cache
     const userDataForCache: IUserDocument = SignUp.prototype.userData(
       authData,
       userObjectId
@@ -62,7 +62,6 @@ export class SignUp {
     await useCache.saveUserToCache(`${userObjectId}`, uId, userDataForCache);
 
     // add to database
-
     omit(userDataForCache, [
       "uId",
       "username",
@@ -76,10 +75,15 @@ export class SignUp {
     userQueue.addUserToDb("addUserToDb", { value: userDataForCache });
 
     const userJwt = SignUp.prototype.signupToken(authData, userObjectId);
+    req.session = {
+      jwt: userJwt,
+    };
+    res.status(HTTP_STATUS.CREATED).json({
+      message: "user created successfully",
 
-    res
-      .status(HTTP_STATUS.CREATED)
-      .json({ message: "user created successfully", authData });
+      user: userDataForCache,
+      token: userJwt,
+    });
   }
 
   private signupToken(data: IAuthDocument, userObjectId: ObjectId): string {

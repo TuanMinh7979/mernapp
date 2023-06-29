@@ -18,9 +18,13 @@ import { userQueue } from "@root/shared/queue/user.queue.";
 import jwt from "jsonwebtoken";
 import { config } from "@root/config";
 
-const useCache: UserCache = new UserCache();
+const userCache: UserCache = new UserCache();
 export class SignUp {
   @joiValidation(signupSchema)
+
+  
+
+  // old
   public async create(req: Request, res: Response): Promise<void> {
     const { username, email, password, avatarColor, avatarImage } = req.body;
     const checkIfUserExists: IAuthDocument =
@@ -59,7 +63,7 @@ export class SignUp {
     );
 
     userDataForCache.profilePicture = `https://res.cloudinary.com/djnekmzdf/image/upload/v${result.version}/${userObjectId}`;
-    await useCache.saveUserToCache(`${userObjectId}`, uId, userDataForCache);
+    await userCache.saveUserToCache(`${userObjectId}`, uId, userDataForCache);
 
     // add to database
     omit(userDataForCache, [
@@ -71,8 +75,8 @@ export class SignUp {
     ]);
 
     //addAuthUserToDb is name of job
-    authQueue.addAuthUserJob("addAuthUserToDb", { value: userDataForCache });
-    userQueue.addUserToDb("addUserToDb", { value: userDataForCache });
+    authQueue.addAuthUserJob("addAuthUserToDb", { value: authData });
+    userQueue.addUserToDbJob("addUserToDb", { value: userDataForCache });
 
     const userJwt = SignUp.prototype.signupToken(authData, userObjectId);
     req.session = {
@@ -85,6 +89,7 @@ export class SignUp {
       token: userJwt,
     });
   }
+
 
   private signupToken(data: IAuthDocument, userObjectId: ObjectId): string {
     return jwt.sign(

@@ -24,5 +24,19 @@ Cookie: withCredentials=true
     "password": "123456"
 }
 
+###
+#SIGNOUT    
+POST http://localhost:5000/api/v1/signout
+Content-Type: application/json
+Accept: application/json
+Cookie: withCredentials=true
+
+###
+#GET currnet user    
+GET http://localhost:5000/api/v1/currentuser
+Content-Type: application/json
+Accept: application/json
+Cookie: withCredentials=true
+
 
 

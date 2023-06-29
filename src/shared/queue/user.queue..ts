@@ -8,7 +8,7 @@ class UserQueue extends BaseQueue {
     this.processJob("addUserToDb", 5, userWorker.addUserToDB);
   }
 
-  public addUserToDb(name: string, data: any): void {
+  public addUserToDbJob(name: string, data: any): void {
     this.addJob(name, data);
   }
 }

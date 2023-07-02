@@ -64,23 +64,23 @@ export class SignIn {
       config.JWT_TOKEN!
     );
 
-    const templateParams: IResetPasswordParams = {
-      username: existingUser.username,
-      email: existingUser.email,
-      ipaddress: publicIP.address(),
-      date: moment().format("DD/MM/YYYY"),
-    };
+    // const templateParams: IResetPasswordParams = {
+    //   username: existingUser.username,
+    //   email: existingUser.email,
+    //   ipaddress: publicIP.address(),
+    //   date: moment().format("DD/MM/YYYY"),
+    // };
 
-    // await mailTransport.sendEmail("miracle68@ethereal.email", 'Testing developerment email', 'this is test')
-    const resetLink = `${config.CLIENT_URL}/reset-password?token=12121212`;
-    const template: string =
-      resetPasswordTemplate.passwordResetConfirmationTemplate(templateParams);
+    // await mailTransport.sendEmail("corine.upton@ethereal.email", 'Testing developerment email', 'this is test')
+    // const resetLink = `${config.CLIENT_URL}/reset-password?token=12121212`;
+    // const template: string =
+    //   resetPasswordTemplate.passwordResetConfirmationTemplate(templateParams);
 
-    emailQueue.addEmailJob('forgotPasswordEmail', {
-      template ,
-      receiverEmail:"miracle68@ethereal.email",
-      subject:"password reset confirmation"
-    })
+    // emailQueue.addEmailJob('forgotPasswordEmail', {
+    //   template ,
+    //   receiverEmail:"corine.upton@ethereal.email",
+    //   subject:"password reset confirmation"
+    // })
     req.session = { jwt: userJwt };
     const userDocument: IUserDocument = {
       ...user,

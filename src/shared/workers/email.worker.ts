@@ -9,6 +9,7 @@ class EmailWorker {
   async addNotificationEmail( job: Job, done: DoneCallback): Promise<void> {
     try {
       const { template , receiverEmail, subject} = job.data;
+      console.log("IN WORKER ",receiverEmail)
       await mailTransport.sendEmail(receiverEmail, subject, template);
       //   percent
       job.progress(100);

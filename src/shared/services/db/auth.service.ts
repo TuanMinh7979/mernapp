@@ -6,7 +6,20 @@ class AuthService {
   public async createAuthUser(data: IAuthDocument): Promise<void> {
     await AuthModel.create(data);
   }
-  public async getUserByUsernameOfEmail(
+  public async updatePasswordToken(
+    authId: string,
+    token: string,
+    tokenExpiration: number
+  ): Promise<void> {
+    await AuthModel.updateOne(
+      { _id: authId },
+      {
+        passwordResetToken: token,
+        passwordResetExpires: tokenExpiration,
+      }
+    );
+  }
+  public async getUserByUsernameOrEmail(
     username: string,
     email: string
   ): Promise<IAuthDocument> {
@@ -24,6 +37,19 @@ class AuthService {
   public async getAuthUserByUsername(username: string) {
     const user = await AuthModel.findOne({
       username: Helpers.firstLetterUppercase(username),
+    }).exec();
+    return user as IAuthDocument;
+  }
+  public async getAuthUserByEmail(email: string) {
+    const user = await AuthModel.findOne({
+      email: email,
+    }).exec();
+    return user as IAuthDocument;
+  }
+  public async getAuthUserByPasswordToken(token: string) {
+    const user = await AuthModel.findOne({
+      passwordResetToken: token,
+      passwordResetExpires: { $gt: Date.now() },
     }).exec();
     return user as IAuthDocument;
   }

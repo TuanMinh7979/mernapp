@@ -13,10 +13,12 @@ import HTTP_STATUS from "http-status-codes";
 import { UserCache } from "@service/redis/user.cache";
 import { IUserDocument } from "@user/interface/user.interface";
 import { omit } from "lodash";
-import { authQueue } from "@root/shared/queue/auth.queue";
-import { userQueue } from "@root/shared/queue/user.queue.";
+
 import jwt from "jsonwebtoken";
 import { config } from "@root/config";
+import { authQueue } from "@service/queue/auth.queue";
+import { userQueue } from "@service/queue/user.queue";
+
 
 const userCache: UserCache = new UserCache();
 export class SignUp {
@@ -28,7 +30,7 @@ export class SignUp {
   public async create(req: Request, res: Response): Promise<void> {
     const { username, email, password, avatarColor, avatarImage } = req.body;
     const checkIfUserExists: IAuthDocument =
-      await authService.getUserByUsernameOfEmail(username, email); //
+      await authService.getUserByUsernameOrEmail(username, email); //
 
     if (checkIfUserExists) {
       throw new BadRequestError("Invalid credentials");

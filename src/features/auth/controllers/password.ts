@@ -7,12 +7,13 @@ import { Request, Response } from "express";
 import crypto from "crypto";
 import { config } from "@root/config";
 import { forgotPasswordTemplate } from "@service/emails/template/forgot-password/forgot-password-template";
-import { emailQueue } from "@root/shared/queue/email.queue";
+
 import HTTP_STATUS from "http-status-codes";
 import { IResetPasswordParams } from "@user/interface/user.interface";
 import moment from "moment";
 import publicIP from "ip";
 import { resetPasswordTemplate } from "@service/emails/template/reset-password/reset-password-template";
+import { emailQueue } from "@service/queue/email.queue";
 export class Password {
   @joiValidation(emailSchema)
   public async create(req: Request, res: Response): Promise<void> {

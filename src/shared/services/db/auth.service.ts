@@ -19,7 +19,7 @@ class AuthService {
       }
     );
   }
-  public async getUserByUsernameOfEmail(
+  public async getUserByUsernameOrEmail(
     username: string,
     email: string
   ): Promise<IAuthDocument> {

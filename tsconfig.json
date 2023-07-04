@@ -113,11 +113,12 @@
     "paths":{
       "@auth/*":["./src/features/auth/*"],
       "@user/*":["./src/features/user/*"],
+      "@post/*": ["./src/features/post/*"],
       "@global/*":["./src/shared/globals/*"],
       "@service/*":["./src/shared/services/*"],
       "@socket/*":["./src/shared/sockets/*"],
       "@worker/*":["./src/shared/workers/*"],
-      "@mock/*":["./src/mocks/*"],
+      "@mock/*":["./src/ /*"],
       "@root/*":["./src/*"],
     }                            /* Skip type checking all .d.ts files. */
   }

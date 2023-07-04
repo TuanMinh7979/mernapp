@@ -16,6 +16,7 @@ import applicationRoutes from "./routes";
 import { NextFunction } from 'express';
 import Logger from 'bunyan';
 import { CustomError, IErrorResponse } from '@global/helpers/error-handler';
+import { SocketIOPostHandler } from '@socket/post.socket';
 
 
 
@@ -121,6 +122,7 @@ export class ChatappServer {
             },
         })
 
+        //redis
         const pubClient = createClient({ url: config.REDIS_HOST })
         const subClient = pubClient.duplicate();
         await Promise.all([pubClient.connect(), subClient.connect()]);
@@ -141,7 +143,11 @@ export class ChatappServer {
     }
 
     private socketIOConnections(io: Server): void {
-        log.info('socketIOConnections')
+        const postSocketHandler:SocketIOPostHandler= new SocketIOPostHandler(io)
+
+        postSocketHandler.listen()
+
+
     }
 
 

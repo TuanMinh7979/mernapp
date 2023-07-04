@@ -1,0 +1,16 @@
+
+###
+POST http://localhost:5000/api/v1/post
+Content-Type: application/json
+Accept: application/json
+Cookie: withCredentials=true
+
+
+{
+  "post": "",
+  "bgColor": "<any-hex-color-code>",
+  "privacy": "Public",
+  "gifUrl": "",
+  "profilePicture": "<cloudinary-user-profile-picture-url>",
+  "feelings": ""
+}

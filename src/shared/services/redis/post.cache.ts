@@ -9,6 +9,7 @@ import {
 import { IReactions } from "@root/features/reactions/interfaces/reaction.interface";
 import { Helpers } from "@global/helpers/helper";
 import { RedisCommandRawReply } from "@redis/client/dist/lib/commands";
+import { commandOptions } from "redis";
 const log: Logger = config.createLogger("postCache");
 
 export type PostCacheMultiType =
@@ -106,9 +107,8 @@ export class PostCache extends BaseCache {
         await this.client.connect();
       }
 
-      const reply: string[] = await this.client.ZRANGE(key, start, end, {
-        REV: true,
-      });
+      const reply: string[] = await this.client.ZRANGE(key, start, end);
+
       const multi: ReturnType<typeof this.client.multi> = this.client.multi();
       for (const value of reply) {
         multi.HGETALL(`posts:${value}`);
@@ -129,8 +129,9 @@ export class PostCache extends BaseCache {
       }
 
       return postReplies;
-    } catch (error) {
-      log.error(error);
+    } catch (e: any) {
+      log.error(e);
+      console.log("---------------", e?.message);
       throw new ServerError("Server error. Try again.");
     }
   }
@@ -159,9 +160,7 @@ export class PostCache extends BaseCache {
         await this.client.connect();
       }
 
-      const reply: string[] = await this.client.ZRANGE(key, start, end, {
-        REV: true,
-      });
+      const reply: string[] = await this.client.ZRANGE(key, start, end);
       const multi: ReturnType<typeof this.client.multi> = this.client.multi();
       for (const value of reply) {
         multi.HGETALL(`posts:${value}`);
@@ -198,10 +197,7 @@ export class PostCache extends BaseCache {
         await this.client.connect();
       }
       // similar zrangebyscore post s1 s1
-      const reply: string[] = await this.client.ZRANGE(key, uId, uId, {
-        REV: true,
-        BY: "SCORE",
-      });
+      const reply: string[] = await this.client.ZRANGEBYSCORE(key, uId, uId);
       const multi: ReturnType<typeof this.client.multi> = this.client.multi();
       for (const value of reply) {
         multi.HGETALL(`posts:${value}`);
@@ -233,6 +229,35 @@ export class PostCache extends BaseCache {
       }
       const count: number = await this.client.ZCOUNT("post", uId, uId);
       return count;
+    } catch (error) {
+      log.error(error);
+      throw new ServerError("Server error. Try again.");
+    }
+  }
+
+  // ------------
+  public async deletePostFromCache(
+    key: string,
+    currentUserId: string
+  ): Promise<void> {
+    try {
+      if (!this.client.isOpen) {
+        await this.client.connect();
+      }
+      const postCount: string[] = await this.client.HMGET(
+        `users:${currentUserId}`,
+        "postsCount"
+      );
+      const multi: ReturnType<typeof this.client.multi> = this.client.multi();
+      // delete from sorted list
+      multi.ZREM("post", `${key}`);
+      // delete from posts 
+      multi.DEL(`posts:${key}`);
+      // multi.DEL(`comments:${key}`);
+      // multi.DEL(`reactions:${key}`);
+      const count: number = parseInt(postCount[0], 10) - 1;
+      multi.HSET(`users:${currentUserId}`, "postsCount", count);
+      await multi.exec();
     } catch (error) {
       log.error(error);
       throw new ServerError("Server error. Try again.");

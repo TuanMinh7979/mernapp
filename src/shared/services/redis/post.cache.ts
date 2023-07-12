@@ -251,13 +251,83 @@ export class PostCache extends BaseCache {
       const multi: ReturnType<typeof this.client.multi> = this.client.multi();
       // delete from sorted list
       multi.ZREM("post", `${key}`);
-      // delete from posts 
+      // delete from posts
       multi.DEL(`posts:${key}`);
       // multi.DEL(`comments:${key}`);
       // multi.DEL(`reactions:${key}`);
       const count: number = parseInt(postCount[0], 10) - 1;
       multi.HSET(`users:${currentUserId}`, "postsCount", count);
       await multi.exec();
+    } catch (error) {
+      log.error(error);
+      throw new ServerError("Server error. Try again.");
+    }
+  }
+
+  public async updatePostInCache(
+    key: string,
+    updatedPost: IPostDocument
+  ): Promise<IPostDocument> {
+    const {
+      post,
+      bgColor,
+      feelings,
+      privacy,
+      gifUrl,
+      imgVersion,
+      imgId,
+      videoId,
+      videoVersion,
+      profilePicture,
+    } = updatedPost;
+    const dataToSave = {
+      post: `${post}`,
+      bgColor: `${bgColor}`,
+      feelings: `${feelings}`,
+      privacy: `${privacy}`,
+      gifUrl: `${gifUrl}`,
+      videoId: `${videoId}`,
+      videoVersion: `${videoVersion}`,
+      profilePicture: `${profilePicture}`,
+      imgVersion: `${imgVersion}`,
+      imgId: `${imgId}`,
+    };
+
+    try {
+      if (!this.client.isOpen) {
+        await this.client.connect();
+      }
+      for (const [itemKey, itemValue] of Object.entries(dataToSave)) {
+        await this.client.HSET(`posts:${key}`, `${itemKey}`, `${itemValue}`);
+      }
+      const multi: ReturnType<typeof this.client.multi> = this.client.multi();
+      multi.HGETALL(`posts:${key}`);
+      const reply: PostCacheMultiType =
+        (await multi.exec()) as PostCacheMultiType;
+      console.log("reply -----", reply);
+
+      // const postReply = reply as IPostDocument[];
+      // postReply[0].commentsCount = Helpers.parseJson(
+      //   `${postReply[0].commentsCount}`
+      // ) as number;
+      // postReply[0].reactions = Helpers.parseJson(
+      //   `${postReply[0].reactions}`
+      // ) as IReactions;
+      // postReply[0].createdAt = new Date(
+      //   Helpers.parseJson(`${postReply[0].createdAt}`)
+      // ) as Date;
+      const postReply = reply as IPostDocument;
+      postReply.commentsCount = Helpers.parseJson(
+        `${postReply.commentsCount}`
+      ) as number;
+      postReply.reactions = Helpers.parseJson(
+        `${postReply.reactions}`
+      ) as IReactions;
+      postReply.createdAt = new Date(
+        Helpers.parseJson(`${postReply.createdAt}`)
+      ) as Date;
+
+      return postReply;
     } catch (error) {
       log.error(error);
       throw new ServerError("Server error. Try again.");

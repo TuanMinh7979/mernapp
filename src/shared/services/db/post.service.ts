@@ -45,7 +45,6 @@ class PostService {
     ]);
     return posts;
   }
-
   // count document
   public async postsCount(): Promise<number> {
     const count: number = await PostModel.find({}).countDocuments();
@@ -60,6 +59,13 @@ class PostService {
       { $inc: { postsCount: -1 } }
     );
     await Promise.all([deletePost, decrementPostCount]);
+  }
+
+  public async editPost(postId: string, updatedPost: IPostDocument[]): Promise<void> {
+    console.log("--------->>>>>",postId,  updatedPost);
+    const updatePost: UpdateQuery<IPostDocument> = PostModel.updateOne({ _id: postId.trim() }, { $set: updatedPost[0] });
+    await updatePost.exec();
+    // await Promise.all([updatePost]);
   }
 }
 

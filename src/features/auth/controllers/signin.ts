@@ -35,7 +35,7 @@ export class SignIn {
     const user: IUserDocument = await userService.getUserByAuthId(
       existingUser._id.toString()
     );
-    console.log(existingUser);
+   
     if (!user) {
       throw new BadRequestError("Invalid credentials");
     }

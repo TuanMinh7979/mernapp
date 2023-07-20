@@ -14,6 +14,7 @@ class PostService {
     userId: string,
     createdPost: IPostDocument
   ): Promise<void> {
+    console.log("-----------createdPost",createdPost)
     const post: Promise<IPostDocument> = PostModel.create(createdPost);
     const user: UpdateQuery<IUserDocument> = UserModel.updateOne(
       { _id: userId },

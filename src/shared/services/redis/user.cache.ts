@@ -83,12 +83,14 @@ export class UserCache extends BaseCache {
     }
   }
 
+// *Request
+// *Response
+// *Params:
   public async getUserFromCache(userId: string): Promise<IUserDocument | null> {
     try {
       if (!this.client.isOpen) {
         await this.client.connect();
       }
-console.log("-----", userId);
 
       const response: IUserDocument = (await this.client.HGETALL(
         `users:${userId}`

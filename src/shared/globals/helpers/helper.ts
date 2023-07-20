@@ -16,8 +16,10 @@ export class Helpers {
 
   static parseJson(prop: string): any {
     try {
-      JSON.parse(prop);
-    } catch (err) {
+      return JSON.parse(prop);
+    } catch (err:any) {
+      console.log("_________________________________LOG PARSE JSON ", err);
+      
       return prop;
     }
   }

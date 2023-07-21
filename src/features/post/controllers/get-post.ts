@@ -7,6 +7,9 @@ import { ServerError } from "@global/helpers/error-handler";
 const postCache: PostCache = new PostCache();
 const PAGE_SIZE = 2;
 export class Get {
+  userFollowing(arg0: string, checkAuthencation: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, _res: Response<any, Record<string, any>>, next: import("express").NextFunction) => void, userFollowing: any) {
+      throw new Error('Method not implemented.');
+  }
   // * Params:
   // * Res: void
   public async posts(req: Request, res: Response): Promise<void> {

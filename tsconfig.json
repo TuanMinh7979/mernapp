@@ -115,6 +115,7 @@
       "@user/*":["./src/features/user/*"],
       "@post/*": ["./src/features/post/*"],
       "@reaction/*": ["./src/features/reaction/*"],
+      "@comment/*": ["./src/features/comments/*"],
       "@global/*":["./src/shared/globals/*"],
       "@service/*":["./src/shared/services/*"],
       "@socket/*":["./src/shared/sockets/*"],

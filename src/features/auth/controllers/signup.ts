@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { joiValidation } from "@global/decorators/joi-validation.decorators";
 import { signupSchema } from "@auth/schemes/signup";
 import { authService } from "@service/db/auth.service";
-import { IAuthDocument, ISignUpData } from "@auth/interfaces/auth.interface";
+import { IAuthDocument, ICreateAuthData } from "@auth/interfaces/auth.interface";
 import { BadRequestError } from "@global/helpers/error-handler";
 import { Helpers } from "@global/helpers/helper";
 import { UploadApiResponse } from "cloudinary";
@@ -19,27 +19,27 @@ import { config } from "@root/config";
 import { authQueue } from "@service/queue/auth.queue";
 import { userQueue } from "@service/queue/user.queue";
 
-
 const userCache: UserCache = new UserCache();
 export class SignUp {
+    //   * Params:
+  // * username:
+  // * email,
+  // * password,
+  // * avatarColor, avatarImage
+  // * avatarImage
+  // * Res: void
   @joiValidation(signupSchema)
-
-  
-
-  // old
   public async create(req: Request, res: Response): Promise<void> {
     const { username, email, password, avatarColor, avatarImage } = req.body;
     const checkIfUserExists: IAuthDocument =
       await authService.getAuthByUsernameOrEmail(username, email); //
-
     if (checkIfUserExists) {
       throw new BadRequestError("Invalid credentials");
     }
-
     const authObjectId: ObjectId = new ObjectId();
     const userObjectId: ObjectId = new ObjectId();
     const uId = `${Helpers.generateRandomIntegers(12)}`;
-    const authData: IAuthDocument = SignUp.prototype.signupData({
+    const authData: IAuthDocument = SignUp.prototype.createAuthData({
       _id: authObjectId,
       uId,
       username,
@@ -47,7 +47,6 @@ export class SignUp {
       password,
       avatarColor,
     });
-
     const result: UploadApiResponse = (await upload(
       avatarImage,
       `${userObjectId}/upload`,
@@ -57,9 +56,8 @@ export class SignUp {
     if (!result?.public_id) {
       throw new BadRequestError("File upload: Invalid credentials");
     }
-
-    // // add to redis cache
-    const userDataForCache: IUserDocument = SignUp.prototype.userData(
+     // ! Cache: user data for cache
+    const userDataForCache: IUserDocument = SignUp.prototype.createUserData(
       authData,
       userObjectId
     );
@@ -67,7 +65,7 @@ export class SignUp {
     userDataForCache.profilePicture = `https://res.cloudinary.com/djnekmzdf/image/upload/v${result.version}/${userObjectId}`;
     await userCache.saveUserToCache(`${userObjectId}`, uId, userDataForCache);
 
-    // add to database
+    // * remove some property for User Document
     omit(userDataForCache, [
       "uId",
       "username",
@@ -75,8 +73,7 @@ export class SignUp {
       "avatarColor",
       "password",
     ]);
-
-    //addAuthUserToDb is name of job
+    // ! Queue: 
     authQueue.addAuthUserJob("addAuthUserToDb", { value: authData });
     userQueue.addUserToDbJob("addUserToDb", { value: userDataForCache });
 
@@ -86,13 +83,15 @@ export class SignUp {
     };
     res.status(HTTP_STATUS.CREATED).json({
       message: "user created successfully",
-
       user: userDataForCache,
       token: userJwt,
     });
   }
 
-
+  //   * Params:
+  // * data: IAuthDocument data to create jwt
+  // * userObjectId: User._id to create jwt ,
+  // * Res: string 
   private signupToken(data: IAuthDocument, userObjectId: ObjectId): string {
     return jwt.sign(
       {
@@ -105,7 +104,10 @@ export class SignUp {
       config.JWT_TOKEN!
     );
   }
-  private signupData(data: ISignUpData): IAuthDocument {
+  //   * Params:
+  // * data: ICreateAuthData data  
+  // * Res: IAuthDocument 
+  private createAuthData(data: ICreateAuthData): IAuthDocument {
     const { _id, username, email, uId, password, avatarColor } = data;
     return {
       _id,
@@ -117,7 +119,11 @@ export class SignUp {
       createdAt: new Date(),
     } as IAuthDocument;
   }
-  private userData(data: IAuthDocument, userObjectId: ObjectId): IUserDocument {
+  //   * Params:
+  // * data: IAuthDocument data  
+  // * userObjectId:  objectId to create User Document  
+  // * Res: IUserDocument 
+  private createUserData(data: IAuthDocument, userObjectId: ObjectId): IUserDocument {
     const { _id, username, email, uId, password, avatarColor } = data;
     return {
       _id: userObjectId,

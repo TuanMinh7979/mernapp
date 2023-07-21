@@ -14,6 +14,8 @@ import { UploadApiErrorResponse, UploadApiResponse } from "cloudinary";
 import { NumericDictionary } from "lodash";
 const postCache: PostCache = new PostCache();
 export class Create {
+  // * Params: 
+  // * Res: void 
   @joiValidation(postSchema)
   public async post(req: Request, res: Response): Promise<void> {
     const { post, bgColor, privacy, gifUrl, profilePicture, feelings } =
@@ -40,13 +42,16 @@ export class Create {
       createdAt: new Date(),
       reactions: { like: 0, love: 0, happy: 0, sad: 0, wow: 0, angry: 0 },
     } as IPostDocument;
+    // ! Socket: 
     socketIOPostObject.emit("add post", createdPost);
+    // ! Cache: 
     await postCache.savePostToCache({
       key: postObjectId,
       currentUserId: `${req.currentUser!.userId}`,
       uId: `${req.currentUser!.uId}`,
       createdPost,
     });
+    // ! Queue:
     postQueue.addPostJob("addPostToDB", {
       key: req.currentUser!.userId,
       value: createdPost,
@@ -56,11 +61,13 @@ export class Create {
       .json({ message: "Post created successfully" });
   }
 
+  // * Params: 
+  // * Res: void
   @joiValidation(postWithImageSchema)
   public async postWithImage(req: Request, res: Response): Promise<void> {
     const { post, bgColor, privacy, gifUrl, profilePicture, feelings, image } =
       req.body;
-
+    // ! Upload: 
     const result:UploadApiResponse = await upload(image) as UploadApiResponse ;
     if (!result?.public_id) {
       console.log(result)
@@ -88,13 +95,16 @@ export class Create {
       createdAt: new Date(),
       reactions: { like: 0, love: 0, happy: 0, sad: 0, wow: 0, angry: 0 },
     } as IPostDocument;
+    // ! Socket: 
     socketIOPostObject.emit("add post", createdPost);
+    //  ! Cache:
     await postCache.savePostToCache({
       key: postObjectId,
       currentUserId: `${req.currentUser!.userId}`,
       uId: `${req.currentUser!.uId}`,
       createdPost,
     });
+    //  ! Queue:
     postQueue.addPostJob("addPostToDB", {
       key: req.currentUser!.userId,
       value: createdPost,

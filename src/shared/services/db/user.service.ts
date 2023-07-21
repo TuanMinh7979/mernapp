@@ -7,8 +7,10 @@ class UserService {
     await UserModel.create(data);
   }
 
+  //   * Params:
+  //   * authId:id of Auth collection
+  //   * Res: IUserDocument
   public async getUserByAuthId(authId: string): Promise<IUserDocument> {
-    
     const users: IUserDocument[] = await UserModel.aggregate([
       { $match: { authId: new mongoose.Types.ObjectId(authId) } },
       // {
@@ -24,7 +26,9 @@ class UserService {
     ]);
     return users[0];
   }
-
+  //   * Params:
+  //   * userId:_id of User collection
+  //   * Res: IUserDocument
   public async getUserById(userId: string): Promise<IUserDocument> {
     const users: IUserDocument[] = await UserModel.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(userId) } },

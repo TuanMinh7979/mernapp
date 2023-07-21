@@ -16,7 +16,7 @@ export class Get {
     const cachedReactions: [IReactionDocument[], number] = await reactionCache.getReactionsFromCache(postId);
     const reactions: [IReactionDocument[], number] = cachedReactions[0].length
       ? cachedReactions
-      : await reactionService.getPostReactions({ postId: new mongoose.Types.ObjectId(postId) }, { createdAt: -1 });
+      : await reactionService.getAllReactionsOfAPost({ postId: new mongoose.Types.ObjectId(postId) }, { createdAt: -1 });
     //*   reactions is a  array first element is a list of reactions, second one is len of previous l
     res.status(HTTP_STATUS.OK).json({ message: 'Post reactions', reactions: reactions[0], count: reactions[1] });
   }
@@ -27,7 +27,7 @@ export class Get {
     const cachedReaction: [IReactionDocument, number] | [] = await reactionCache.getSingleReactionByUsernameFromCache(postId, username);
     const reactions: [IReactionDocument, number] | [] = cachedReaction.length
       ? cachedReaction
-      : await reactionService.getSinglePostReactionByUsername(postId, username);
+      : await reactionService.getAReactionByAUserOfAPost(postId, username);
     res.status(HTTP_STATUS.OK).json({
       message: 'Single post reaction by username',
       reactions: reactions.length ? reactions[0] : {},
@@ -37,7 +37,7 @@ export class Get {
 //   get only from database
   public async reactionsByUsername(req: Request, res: Response): Promise<void> {
     const { username } = req.params;
-    const reactions: IReactionDocument[] = await reactionService.getReactionsByUsername(username);
+    const reactions: IReactionDocument[] = await reactionService.getAllReactionsByUsername(username);
     res.status(HTTP_STATUS.OK).json({ message: 'All user reactions by username', reactions });
   }
 }

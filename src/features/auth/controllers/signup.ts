@@ -30,7 +30,7 @@ export class SignUp {
   public async create(req: Request, res: Response): Promise<void> {
     const { username, email, password, avatarColor, avatarImage } = req.body;
     const checkIfUserExists: IAuthDocument =
-      await authService.getUserByUsernameOrEmail(username, email); //
+      await authService.getAuthByUsernameOrEmail(username, email); //
 
     if (checkIfUserExists) {
       throw new BadRequestError("Invalid credentials");

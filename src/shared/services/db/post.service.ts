@@ -10,11 +10,14 @@ import { UserModel } from "@user/models/user.schema";
 import mongoose, { Query, UpdateQuery } from "mongoose";
 
 class PostService {
+  //   * Params:
+  //   * userId: autho userId
+  //   * createdPost: data to save
+  //   * Res: void
   public async addPostToDB(
     userId: string,
     createdPost: IPostDocument
   ): Promise<void> {
-    console.log("-----------createdPost",createdPost)
     const post: Promise<IPostDocument> = PostModel.create(createdPost);
     const user: UpdateQuery<IUserDocument> = UserModel.updateOne(
       { _id: userId },
@@ -23,6 +26,9 @@ class PostService {
     await Promise.all([post, user]);
   }
 
+  //   * Params:
+  //   * userId: IGetPostsQuery
+  //   * Res: IPostDocument[]
   public async getPosts(
     query: IGetPostsQuery,
     skip = 0,
@@ -31,6 +37,7 @@ class PostService {
   ): Promise<IPostDocument[]> {
     let postQuery = {};
     // if is a image or video post
+    // ? check later
     if (query?.imgId && query?.gifUrl) {
       postQuery = { $or: [{ imgId: { $ne: "" } }, { gifUrl: { $ne: "" } }] };
     } else if (query?.videoId) {
@@ -46,11 +53,17 @@ class PostService {
     ]);
     return posts;
   }
-  // count document
+
+  //   * Params:
+  //   * Res:len
   public async postsCount(): Promise<number> {
     const count: number = await PostModel.find({}).countDocuments();
     return count;
   }
+  //   * Params:
+  //* postId:id of post
+  //* userId: user._id of author
+  //   * Res:len
   public async deletePost(postId: string, userId: string): Promise<void> {
     const deletePost: Query<IQueryComplete & IQueryDeleted, IPostDocument> =
       PostModel.deleteOne({ _id: postId });
@@ -61,10 +74,18 @@ class PostService {
     );
     await Promise.all([deletePost, decrementPostCount]);
   }
-
-  public async editPost(postId: string, updatedPost: IPostDocument[]): Promise<void> {
-    console.log("--------->>>>>",postId,  updatedPost);
-    const updatePost: UpdateQuery<IPostDocument> = PostModel.updateOne({ _id: postId.trim() }, { $set: updatedPost[0] });
+  //   * Params:
+  //* postId:id of post
+  //* updatedPost: data to update
+  //   * Res:void
+  public async editPost(
+    postId: string,
+    updatedPost: IPostDocument[]
+  ): Promise<void> {
+    const updatePost: UpdateQuery<IPostDocument> = PostModel.updateOne(
+      { _id: postId.trim() },
+      { $set: updatedPost[0] }
+    );
     await updatePost.exec();
     // await Promise.all([updatePost]);
   }

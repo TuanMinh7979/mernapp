@@ -18,7 +18,7 @@ export class Password {
   @joiValidation(emailSchema)
   public async create(req: Request, res: Response): Promise<void> {
     const { email } = req.body;
-    const existingUser: IAuthDocument = await authService.getAuthUserByEmail(
+    const existingUser: IAuthDocument = await authService.getAuthByEmail(
       email
     );
 
@@ -54,7 +54,7 @@ export class Password {
       throw new BadRequestError("Password do not match");
     const { token } = req.params;
     const existingUser: IAuthDocument =
-      await authService.getAuthUserByPasswordToken(token);
+      await authService.getAuthByPasswordToken(token);
 
     if (!existingUser) {
       throw new BadRequestError("Reset token has expired");

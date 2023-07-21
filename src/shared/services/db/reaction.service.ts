@@ -15,10 +15,10 @@ import mongoose from "mongoose";
 
 const userCache: UserCache = new UserCache();
 
-// *Response
-// *Params:
-// *:
 class ReactionService {
+  //   * Params:
+  //   * reactionData
+  //   * Res: IUserDocument
   public async addReactionDataToDB(reactionData: IReactionJob): Promise<void> {
     const {
       postId,
@@ -37,10 +37,9 @@ class ReactionService {
       updatedReactionObject = omit(reactionObject, ["_id"]);
     }
 
+    // Add and Update (upsert: true)
     const updatedReaction: [IUserDocument, IReactionDocument, IPostDocument] =
       (await Promise.all([
-        // get user from cache
-        // userCache.getUserFromCache(`${userTo}`),
         ReactionModel.replaceOne(
           { postId, type: previousReaction, username },
           updatedReactionObject,
@@ -90,9 +89,9 @@ class ReactionService {
     // }
   }
 
-  // *Response
-  // *Params:
-  // *:
+  //   * Params:
+  //   * reactionData
+  //   * Res: void
   public async removeReactionDataFromDB(
     reactionData: IReactionJob
   ): Promise<void> {
@@ -112,7 +111,11 @@ class ReactionService {
     ]);
   }
 
-  public async getPostReactions(
+  //   * Params:
+  //   * query: {postId}
+  //   * sort
+  //   * Res: [IReactionDocument[], len]
+  public async getAllReactionsOfAPost(
     query: IQueryReaction,
     sort: Record<string, 1 | -1>
   ): Promise<[IReactionDocument[], number]> {
@@ -122,8 +125,12 @@ class ReactionService {
     ]);
     return [reactions, reactions.length];
   }
-
-  public async getSinglePostReactionByUsername(
+  // * get a reaction of a user on a post
+  //   * Params:
+  //   * postId: 
+  //   * username:
+  //   * Res: [IReactionDocument[], len]
+  public async getAReactionByAUserOfAPost(
     postId: string,
     username: string
   ): Promise<[IReactionDocument, number] | []> {
@@ -138,7 +145,7 @@ class ReactionService {
     return reactions.length ? [reactions[0], 1] : [];
   }
 
-  public async getReactionsByUsername(
+  public async getAllReactionsByUsername(
     username: string
   ): Promise<IReactionDocument[]> {
     const reactions: IReactionDocument[] = await ReactionModel.aggregate([

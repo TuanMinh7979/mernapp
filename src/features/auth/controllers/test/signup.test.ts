@@ -177,7 +177,7 @@ describe('SignUp', () => {
     ) as Request;
     const res: Response = authMockResponse();
 
-    jest.spyOn(authService, 'getUserByUsernameOrEmail').mockResolvedValue(authMock);
+    jest.spyOn(authService, 'getAuthByUsernameOrEmail').mockResolvedValue(authMock);
     SignUp.prototype.create(req, res).catch((error: CustomError) => {
       expect(error.statusCode).toEqual(400);
       expect(error.serializeErrors().message).toEqual('Invalid credentials');
@@ -197,7 +197,7 @@ describe('SignUp', () => {
     ) as Request;
     const res: Response = authMockResponse();
 
-    jest.spyOn(authService, 'getUserByUsernameOrEmail').mockResolvedValue(null as any);
+    jest.spyOn(authService, 'getAuthByUsernameOrEmail').mockResolvedValue(null as any);
     const userSpy = jest.spyOn(UserCache.prototype, 'saveUserToCache');
     jest.spyOn(cloudinaryUploads, 'upload').mockImplementation((): any => Promise.resolve({ version: '1234737373', public_id: '123456' }));
 

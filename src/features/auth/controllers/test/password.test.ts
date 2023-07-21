@@ -39,7 +39,7 @@ describe('Password', () => {
     it('should throw "Invalid credentials" if email does not exist', () => {
       const req: Request = authMockRequest({}, { email: WRONG_EMAIL }) as Request;
       const res: Response = authMockResponse();
-      jest.spyOn(authService, 'getAuthUserByEmail').mockResolvedValue(null as any);
+      jest.spyOn(authService, 'getAuthByEmail').mockResolvedValue(null as any);
       Password.prototype.create(req, res).catch((error: CustomError) => {
         expect(error.statusCode).toEqual(400);
         expect(error.serializeErrors().message).toEqual('Invalid credentials');
@@ -49,7 +49,7 @@ describe('Password', () => {
     it('should send correct json response', async () => {
       const req: Request = authMockRequest({}, { email: CORRECT_EMAIL }) as Request;
       const res: Response = authMockResponse();
-      jest.spyOn(authService, 'getAuthUserByEmail').mockResolvedValue(authMock);
+      jest.spyOn(authService, 'getAuthByEmail').mockResolvedValue(authMock);
       jest.spyOn(emailQueue, 'addEmailJob');
       await Password.prototype.create(req, res);
       expect(emailQueue.addEmailJob).toHaveBeenCalled();
@@ -84,7 +84,7 @@ describe('Password', () => {
         token: ''
       }) as Request;
       const res: Response = authMockResponse();
-      jest.spyOn(authService, 'getAuthUserByPasswordToken').mockResolvedValue(null as any);
+      jest.spyOn(authService, 'getAuthByPasswordToken').mockResolvedValue(null as any);
       Password.prototype.update(req, res).catch((error: CustomError) => {
         expect(error.statusCode).toEqual(400);
         expect(error.serializeErrors().message).toEqual('Reset token has expired.');
@@ -96,7 +96,7 @@ describe('Password', () => {
         token: '12sde3'
       }) as Request;
       const res: Response = authMockResponse();
-      jest.spyOn(authService, 'getAuthUserByPasswordToken').mockResolvedValue(authMock);
+      jest.spyOn(authService, 'getAuthByPasswordToken').mockResolvedValue(authMock);
       jest.spyOn(emailQueue, 'addEmailJob');
       await Password.prototype.update(req, res);
       expect(emailQueue.addEmailJob).toHaveBeenCalled();

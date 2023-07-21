@@ -1,7 +1,7 @@
-import { ObjectId } from "mongoose";
+import mongoose from "mongoose";
 
 export interface ICommentDocument extends Document {
-  _id?: string | ObjectId;
+  _id?: string | mongoose.Types.ObjectId;
   username: string;
   avatarColor: string;
   postId: string;
@@ -9,7 +9,7 @@ export interface ICommentDocument extends Document {
   comment: string;
   createAt?: Date;
 //   author of then post
-  userTo?: string | ObjectId;
+  userTo?: string | mongoose.Types.ObjectId;
 }
 
 export interface ICommentJob {
@@ -17,7 +17,7 @@ export interface ICommentJob {
   userTo: string;
   userFrom: string;
   username: string;
-  comment: string;
+  comment: ICommentDocument;
 }
 
 export interface ICommentNameList {
@@ -27,8 +27,8 @@ export interface ICommentNameList {
 }
 
 export interface IQueryComment {
-  _id?: string | ObjectId;
-  postId?: string | ObjectId;
+  _id?: string | mongoose.Types.ObjectId | undefined;
+  postId?: string | mongoose.Types.ObjectId | undefined;
 }
 export interface IQuerySort {
   createAt?: number;

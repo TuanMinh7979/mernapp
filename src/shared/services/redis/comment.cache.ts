@@ -101,7 +101,6 @@ export class CommentCache extends BaseCache {
       throw new ServerError("Server error, try again");
     }
   }
-
   // * Params:
   // * postId
   // * commentId

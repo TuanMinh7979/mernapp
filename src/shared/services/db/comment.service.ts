@@ -48,24 +48,21 @@ class CommentService {
     query: IQueryComment,
     sort: Record<string, 1 | -1>
   ): Promise<ICommentNameList[]> {
-    
     const commentUserNameListOfAPost: ICommentNameList[] =
       await CommentsModel.aggregate([
         { $match: query },
         { $sort: sort },
         {
           $group: {
-            // group by all ,no group
             _id: null,
             names: { $addToSet: "$username" },
-            // count: { $sum: 1 },
-            count: { $sum: 1 }
+            count: { $sum: 1 },
           },
         },
         { $project: { _id: 0 } },
       ]);
-      console.log(commentUserNameListOfAPost);
-      
+    console.log(commentUserNameListOfAPost);
+
     return commentUserNameListOfAPost;
   }
 }

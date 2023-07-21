@@ -24,7 +24,14 @@ export class PostCache extends BaseCache {
   constructor() {
     super("postCache");
   }
-
+  //   * Params:
+  // *ISavePostToCache{
+  //* key: ObjectId | string; = id of post = key of post sortedSet and posts:key Hash Object in redis
+  //* currentUserId: string; = logged user id
+  //* uId: string; = logged user uId
+  //*createdPost: IPostDocument; = data of post
+  //*}
+  //   * Res: void
   public async savePostToCache(data: ISavePostToCache): Promise<void> {
     const { key, currentUserId, uId, createdPost } = data;
     const {
@@ -79,7 +86,7 @@ export class PostCache extends BaseCache {
       );
       console.log(postCount);
       const multi = this.client.multi();
-      //add element to a sorted list with accordently scorce
+      //*  add element to a post sorted list with accordently score
       await this.client.ZADD("post", {
         score: parseInt(uId, 10),
         value: `${key}`,
@@ -88,7 +95,7 @@ export class PostCache extends BaseCache {
         multi.HSET(`posts:${key}`, `${itemKey}`, `${itemValue}`);
       }
       const count: number = parseInt(postCount[0], 10) + 1;
-      //set a value of a property of a object
+      // * update postsCount property of users:key Hash Object
       multi.HSET(`users:${currentUserId}`, "postsCount", count);
       multi.exec();
     } catch (error) {
@@ -97,6 +104,10 @@ export class PostCache extends BaseCache {
     }
   }
 
+  //   * Params:
+  //* key: ObjectId | string; = id of post = key of post sortedSet and posts:key Hash Object in redis
+  //* start, end : index in redis sorted set
+  //   * Res: IPostDocument[]
   public async getPostsFromCache(
     key: string,
     start: number,
@@ -106,17 +117,16 @@ export class PostCache extends BaseCache {
       if (!this.client.isOpen) {
         await this.client.connect();
       }
-
       const reply: string[] = await this.client.ZRANGE(key, start, end);
-
       const multi: ReturnType<typeof this.client.multi> = this.client.multi();
       for (const value of reply) {
         multi.HGETALL(`posts:${value}`);
       }
-      const replies: PostCacheMultiType =
+      const resultArrayOfAllHGetAll: PostCacheMultiType =
         (await multi.exec()) as unknown as PostCacheMultiType;
-      const postReplies: IPostDocument[] = [];
-      for (const post of replies as unknown as IPostDocument[]) {
+      log.info(resultArrayOfAllHGetAll);
+      const postDocuments: IPostDocument[] = [];
+      for (const post of resultArrayOfAllHGetAll as unknown as IPostDocument[]) {
         //  cast to real type from string
         post.commentsCount = Helpers.parseJson(
           `${post.commentsCount}`
@@ -125,17 +135,18 @@ export class PostCache extends BaseCache {
         post.createdAt = new Date(
           Helpers.parseJson(`${post.createdAt}`)
         ) as Date;
-        postReplies.push(post);
+        postDocuments.push(post);
       }
 
-      return postReplies;
+      return postDocuments;
     } catch (e: any) {
       log.error(e);
-      console.log("---------------", e?.message);
       throw new ServerError("Server error. Try again.");
     }
   }
 
+  //   * Params:
+  //   * Res: number
   public async getTotalPostsInCache(): Promise<number> {
     try {
       if (!this.client.isOpen) {
@@ -150,6 +161,10 @@ export class PostCache extends BaseCache {
   }
 
   // //only get post and its asscociated image with it
+  //   * Params:
+  //* key: ObjectId | string; = id of post = key of post sortedSet and posts:key Hash Object in redis
+  //* start, end : index in redis sorted set
+  //   * Res: IPostDocument[]
   public async getPostsWithImagesFromCache(
     key: string,
     start: number,
@@ -163,16 +178,20 @@ export class PostCache extends BaseCache {
       const reply: string[] = await this.client.ZRANGE(key, start, end);
       const multi: ReturnType<typeof this.client.multi> = this.client.multi();
       for (const value of reply) {
+        // * get a posts:key Hash Object as string
         multi.HGETALL(`posts:${value}`);
       }
-      const replies: PostCacheMultiType =
+      const resultArrayOfAllHGetAll: PostCacheMultiType =
         (await multi.exec()) as PostCacheMultiType;
       const postWithImages: IPostDocument[] = [];
-      for (const post of replies as IPostDocument[]) {
+      for (const post of resultArrayOfAllHGetAll as IPostDocument[]) {
         if ((post.imgId && post.imgVersion) || post.gifUrl) {
+          // * if post is imaging post
+          // parse string to js type
           post.commentsCount = Helpers.parseJson(
             `${post.commentsCount}`
           ) as number;
+
           post.reactions = Helpers.parseJson(`${post.reactions}`) as IReactions;
           post.createdAt = new Date(
             Helpers.parseJson(`${post.createdAt}`)
@@ -187,55 +206,9 @@ export class PostCache extends BaseCache {
     }
   }
 
-  // get user's post
-  public async getUserPostsFromCache(
-    key: string,
-    uId: number
-  ): Promise<IPostDocument[]> {
-    try {
-      if (!this.client.isOpen) {
-        await this.client.connect();
-      }
-      // similar zrangebyscore post s1 s1
-      const reply: string[] = await this.client.ZRANGEBYSCORE(key, uId, uId);
-      const multi: ReturnType<typeof this.client.multi> = this.client.multi();
-      for (const value of reply) {
-        multi.HGETALL(`posts:${value}`);
-      }
-      const replies: PostCacheMultiType =
-        (await multi.exec()) as PostCacheMultiType;
-      const postReplies: IPostDocument[] = [];
-      for (const post of replies as IPostDocument[]) {
-        post.commentsCount = Helpers.parseJson(
-          `${post.commentsCount}`
-        ) as number;
-        post.reactions = Helpers.parseJson(`${post.reactions}`) as IReactions;
-        post.createdAt = new Date(
-          Helpers.parseJson(`${post.createdAt}`)
-        ) as Date;
-        postReplies.push(post);
-      }
-      return postReplies;
-    } catch (error) {
-      log.error(error);
-      throw new ServerError("Server error. Try again.");
-    }
-  }
-
-  public async getTotalUserPostsInCache(uId: number): Promise<number> {
-    try {
-      if (!this.client.isOpen) {
-        await this.client.connect();
-      }
-      const count: number = await this.client.ZCOUNT("post", uId, uId);
-      return count;
-    } catch (error) {
-      log.error(error);
-      throw new ServerError("Server error. Try again.");
-    }
-  }
-
-  // ------------
+  //   * Params:
+  //* key: ObjectId | string; = id of post = key of post sortedSet and posts:key Hash Object in redis
+  //   * Res: void
   public async deletePostFromCache(
     key: string,
     currentUserId: string
@@ -244,18 +217,21 @@ export class PostCache extends BaseCache {
       if (!this.client.isOpen) {
         await this.client.connect();
       }
+      //* get postsCount from users:key HashObject
       const postCount: string[] = await this.client.HMGET(
         `users:${currentUserId}`,
         "postsCount"
       );
       const multi: ReturnType<typeof this.client.multi> = this.client.multi();
-      // delete from sorted list
+      // delete from sorted list post
+      //* ZREM is remove from post sorted set by value (a key)
       multi.ZREM("post", `${key}`);
-      // delete from posts
+      // delete from  posts
       multi.DEL(`posts:${key}`);
       // multi.DEL(`comments:${key}`);
       // multi.DEL(`reactions:${key}`);
-      const count: number = parseInt(postCount[0], 10) - 1;
+      const count: number = parseInt(postCount[0]) - 1;
+      // * update postsCount property of users:key hash object
       multi.HSET(`users:${currentUserId}`, "postsCount", count);
       await multi.exec();
     } catch (error) {
@@ -264,6 +240,10 @@ export class PostCache extends BaseCache {
     }
   }
 
+  //   * Params:
+  //* key: ObjectId | string; = id of post = key of post sortedSet and posts:key Hash Object in redis
+  //* updatedPost:IPostDocument: data to update
+  //   * Res: IPostDocument: updated post document in cache
   public async updatePostInCache(
     key: string,
     updatedPost: IPostDocument
@@ -298,25 +278,15 @@ export class PostCache extends BaseCache {
         await this.client.connect();
       }
       for (const [itemKey, itemValue] of Object.entries(dataToSave)) {
+        // * set some properties are changed to posts:key hash object
         await this.client.HSET(`posts:${key}`, `${itemKey}`, `${itemValue}`);
       }
       const multi: ReturnType<typeof this.client.multi> = this.client.multi();
       multi.HGETALL(`posts:${key}`);
-      const reply: PostCacheMultiType =
+      const resultArrayOfAllHGetAll: PostCacheMultiType =
         (await multi.exec()) as PostCacheMultiType;
-      console.log("reply -----", reply);
 
-      // const postReply = reply as IPostDocument[];
-      // postReply[0].commentsCount = Helpers.parseJson(
-      //   `${postReply[0].commentsCount}`
-      // ) as number;
-      // postReply[0].reactions = Helpers.parseJson(
-      //   `${postReply[0].reactions}`
-      // ) as IReactions;
-      // postReply[0].createdAt = new Date(
-      //   Helpers.parseJson(`${postReply[0].createdAt}`)
-      // ) as Date;
-      const postReply = reply as IPostDocument;
+      const postReply = resultArrayOfAllHGetAll as IPostDocument;
       postReply.commentsCount = Helpers.parseJson(
         `${postReply.commentsCount}`
       ) as number;

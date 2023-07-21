@@ -22,6 +22,7 @@ export interface ICommentJob {
 
 export interface ICommentNameList {
   count: number;
+  // who are comment
   names: string[];
 }
 

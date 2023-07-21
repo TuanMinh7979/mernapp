@@ -91,12 +91,12 @@ describe('SignIn', () => {
     // const req: Request = authMockRequest({}, { username: USERNAME, password: PASSWORD }) as Request;
     const req: Request = authMockRequest({}, { username: "anhbay", password: "333333" }) as Request;
     const res: Response = authMockResponse();
-    // jest.spyOn(authService, 'getAuthUserByUsername').mockResolvedValueOnce(null as any);
+    // jest.spyOn(authService, 'getAuthByUsername').mockResolvedValueOnce(null as any);
 
     // SignIn.prototype.read(req, res).then(res=>console.log(res)).catch((error: CustomError) => {
     //     console.log(error);
     //     console.log("-----------------------------------")
-    //   expect(authService.getAuthUserByUsername).toHaveBeenCalledWith(req.body.username);
+    //   expect(authService.getAuthByUsername).toHaveBeenCalledWith(req.body.username);
     //   expect(error.statusCode).toEqual(400);
     //   expect(error.serializeErrors().message).toEqual('Invalid credentials123');
     // });
@@ -105,10 +105,10 @@ describe('SignIn', () => {
 //   it('should throw "Invalid credentials" if password does not exist', () => {
 //     const req: Request = authMockRequest({}, { username: USERNAME, password: PASSWORD }) as Request;
 //     const res: Response = authMockResponse();
-//     jest.spyOn(authService, 'getAuthUserByUsername').mockResolvedValueOnce(null as any);
+//     jest.spyOn(authService, 'getAuthByUsername').mockResolvedValueOnce(null as any);
 
 //     SignIn.prototype.read(req, res).catch((error: CustomError) => {
-//       expect(authService.getAuthUserByUsername).toHaveBeenCalledWith(Helpers.firstLetterUppercase(req.body.username));
+//       expect(authService.getAuthByUsername).toHaveBeenCalledWith(Helpers.firstLetterUppercase(req.body.username));
 //       expect(error.statusCode).toEqual(400);
 //       expect(error.serializeErrors().message).toEqual('Invalid credentials');
 //     });
@@ -118,7 +118,7 @@ describe('SignIn', () => {
 //     const req: Request = authMockRequest({}, { username: USERNAME, password: PASSWORD }) as Request;
 //     const res: Response = authMockResponse();
 //     authMock.comparePassword = () => Promise.resolve(true);
-//     jest.spyOn(authService, 'getAuthUserByUsername').mockResolvedValue(authMock);
+//     jest.spyOn(authService, 'getAuthByUsername').mockResolvedValue(authMock);
 //     jest.spyOn(userService, 'getUserByAuthId').mockResolvedValue(mergedAuthAndUserData);
 
 //     await SignIn.prototype.read(req, res);

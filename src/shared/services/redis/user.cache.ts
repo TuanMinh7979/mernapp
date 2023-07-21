@@ -16,6 +16,10 @@ export class UserCache extends BaseCache {
     super("userCache");
   }
 
+    //   * Params:
+  //* key: ObjectId | string; = id of post = key of user sortedSet and users:key Hash Object in redis
+  //* userUId:uId(a random number) use for score of user sortedSet
+  //   * Res: void: updated post document in cache
   public async saveUserToCache(
     key: string,
     userUId: string,
@@ -83,15 +87,14 @@ export class UserCache extends BaseCache {
     }
   }
 
-// *Request
-// *Response
-// *Params:
+  //   * Params:
+  //* userUId:uId(a random number) use for score of user sortedSet
+  //   * Res: void: updated post document in cache
   public async getUserFromCache(userId: string): Promise<IUserDocument | null> {
     try {
       if (!this.client.isOpen) {
         await this.client.connect();
       }
-
       const response: IUserDocument = (await this.client.HGETALL(
         `users:${userId}`
       )) as unknown as IUserDocument;

@@ -13,10 +13,11 @@ import { reactionQueue } from '@service/queue/reaction.queue';
 const reactionCache: ReactionCache = new ReactionCache();
 
 export class Add {
+  // * Params: 
+  // * Res: void 
   @joiValidation(addReactionSchema)
   public async reaction(req: Request, res: Response): Promise<void> {
     // *userTo : id of post creator
-
     const { userTo, postId, type, previousReaction, postReactions, profilePicture } = req.body;
     const reactionObject: IReactionDocument = {
       _id: new ObjectId(),
@@ -26,8 +27,8 @@ export class Add {
       username: req.currentUser!.username,
       profilePicture
     } as IReactionDocument;
+    // ! Cache:
     await reactionCache.savePostReactionToCache(postId, reactionObject, postReactions, type, previousReaction);
-
     const databaseReactionData: IReactionJob = {
       postId,
       userTo,
@@ -37,6 +38,7 @@ export class Add {
       previousReaction,
       reactionObject
     };
+      // ! Queue:
     reactionQueue.addReactionJob('addReactionToDB', databaseReactionData);
     res.status(HTTP_STATUS.OK).json({ message: 'Reaction added successfully' });
   }

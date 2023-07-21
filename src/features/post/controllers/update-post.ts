@@ -13,6 +13,8 @@ import { BadRequestError } from "@global/helpers/error-handler";
 const postCache: PostCache = new PostCache();
 
 export class Update {
+  // * Params:
+  // * Res: void
   @joiValidation(postSchema)
   public async posts(req: Request, res: Response): Promise<void> {
     const {
@@ -37,21 +39,27 @@ export class Update {
       imgVersion,
     } as IPostDocument;
 
+    // ! Cache: 
     const postUpdated: IPostDocument = await postCache.updatePostInCache(
       postId,
       updatedPost
     );
+    // ! Socket:
     socketIOPostObject.emit("update post", postUpdated, "posts");
+    // ! Queue:
     postQueue.addPostJob("updatePostInDB", { key: postId, value: postUpdated });
     res.status(HTTP_STATUS.OK).json({ message: "Post updated successfully" });
   }
 
+  // * Params:
+  // * Res: void
   @joiValidation(postWithImageSchema)
   public async postWithImage(req: Request, res: Response): Promise<void> {
     const { imgId, imgVersion } = req.body;
     if (imgId && imgVersion) {
       Update.prototype.updatePost(req);
     } else {
+       // ! Upload:
       const result: UploadApiResponse =
         await Update.prototype.addImageToExistingPost(req);
       if (!result.public_id) {
@@ -62,7 +70,8 @@ export class Update {
     }
     res.status(HTTP_STATUS.OK).json({ message: "Post updated successfully" });
   }
-
+  // * Params:
+  // * Res: void
   private async updatePost(req: Request): Promise<void> {
     const {
       post,
@@ -88,14 +97,18 @@ export class Update {
       imgVersion: imgVersion ? imgVersion : "",
     } as IPostDocument;
 
+     // ! Cache:
     const postUpdated: IPostDocument = await postCache.updatePostInCache(
       postId,
       updatedPost
     );
+     // ! Socket:
     socketIOPostObject.emit("update post", postUpdated, "posts");
+     // ! Queue:
     postQueue.addPostJob("updatePostInDB", { key: postId, value: postUpdated });
   }
-
+  // * Params:
+  // * Res: void
   private async addImageToExistingPost(
     req: Request
   ): Promise<UploadApiResponse> {
@@ -110,6 +123,7 @@ export class Update {
       video,
     } = req.body;
     const { postId } = req.params;
+     // ! Upload:
     const result: UploadApiResponse = (await upload(
       image
     )) as UploadApiResponse;
@@ -128,11 +142,14 @@ export class Update {
       imgVersion: image ? result.version.toString() : "",
     } as IPostDocument;
 
+     // ! Cache:
     const postUpdated: IPostDocument = await postCache.updatePostInCache(
       postId,
       updatedPost
     );
+     // ! Socket:
     socketIOPostObject.emit("update post", postUpdated, "posts");
+     // ! Queue:
     postQueue.addPostJob("updatePostInDB", { key: postId, value: postUpdated });
 
     return result;

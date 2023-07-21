@@ -3,9 +3,17 @@ import { AuthModel } from "@auth/models/auth.schema";
 import { Helpers } from "@global/helpers/helper";
 
 class AuthService {
+  //   * Params:
+  //   * data: data to save
+  //   * Res: void
   public async createAuthUser(data: IAuthDocument): Promise<void> {
     await AuthModel.create(data);
   }
+  //   * Params:
+  //   * authId: is auth._id
+  //   * token: new token(for updating password) 
+  //   * tokenExpiration: time for token
+  //   * Res: void
   public async updatePasswordToken(
     authId: string,
     token: string,
@@ -19,7 +27,11 @@ class AuthService {
       }
     );
   }
-  public async getUserByUsernameOrEmail(
+  //   * Params:
+  //   * username: 
+  //   * email:
+  //   * Res: AuthDocument
+  public async getAuthByUsernameOrEmail(
     username: string,
     email: string
   ): Promise<IAuthDocument> {
@@ -29,24 +41,33 @@ class AuthService {
         { email: email.toLowerCase() },
       ],
     };
-    const user: IAuthDocument = (await AuthModel.findOne(
+    const auth: IAuthDocument = (await AuthModel.findOne(
       query
     ).exec()) as IAuthDocument;
-    return user;
+    return auth;
   }
-  public async getAuthUserByUsername(username: string) {
-    const user = await AuthModel.findOne({
+  //   * Params:
+  //   * username: 
+  //   * Res: AuthDocument
+  public async getAuthByUsername(username: string) {
+    const auth = await AuthModel.findOne({
       username: Helpers.firstLetterUppercase(username),
     }).exec();
-    return user as IAuthDocument;
+    return auth as IAuthDocument;
   }
-  public async getAuthUserByEmail(email: string) {
-    const user = await AuthModel.findOne({
+  //   * Params:
+  //   * email: 
+  //   * Res: AuthDocument
+  public async getAuthByEmail(email: string) {
+    const auth = await AuthModel.findOne({
       email: email,
     }).exec();
-    return user as IAuthDocument;
+    return auth as IAuthDocument;
   }
-  public async getAuthUserByPasswordToken(token: string) {
+  //   * Params:
+  //   * token: passwordResetToken 
+  //   * Res: AuthDocument
+  public async getAuthByPasswordToken(token: string) {
     const user = await AuthModel.findOne({
       passwordResetToken: token,
       passwordResetExpires: { $gt: Date.now() },

@@ -15,12 +15,12 @@ import publicIP from "ip";
 import { resetPasswordTemplate } from "@service/emails/template/reset-password/reset-password-template";
 import { emailQueue } from "@service/queue/email.queue";
 export class Password {
+  // * Params:
+  // * Res: void
   @joiValidation(emailSchema)
   public async create(req: Request, res: Response): Promise<void> {
     const { email } = req.body;
-    const existingUser: IAuthDocument = await authService.getAuthUserByEmail(
-      email
-    );
+    const existingUser: IAuthDocument = await authService.getAuthByEmail(email);
 
     if (!existingUser) {
       throw new BadRequestError("Invalid credentials");
@@ -39,7 +39,7 @@ export class Password {
       existingUser.username,
       resetLink
     );
-
+    // ! Queue:
     emailQueue.addEmailJob("forgotPasswordEmail", {
       template,
       receiverEmail: email,
@@ -47,6 +47,8 @@ export class Password {
     });
     res.status(HTTP_STATUS.OK).json({ message: "Password reset email sent" });
   }
+  // * Params:
+  // * Res: void
   @joiValidation(passwordSchema)
   public async update(req: Request, res: Response): Promise<void> {
     const { password, confirmPassword } = req.body;
@@ -54,8 +56,7 @@ export class Password {
       throw new BadRequestError("Password do not match");
     const { token } = req.params;
     const existingUser: IAuthDocument =
-      await authService.getAuthUserByPasswordToken(token);
-
+      await authService.getAuthByPasswordToken(token);
     if (!existingUser) {
       throw new BadRequestError("Reset token has expired");
     }
@@ -73,7 +74,7 @@ export class Password {
     };
     const template: string =
       resetPasswordTemplate.passwordResetConfirmationTemplate(templateParams);
-
+    // ! Queue:
     emailQueue.addEmailJob("forgotPasswordEmail", {
       template,
       receiverEmail: existingUser.email,

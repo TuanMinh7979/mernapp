@@ -1,3 +1,4 @@
+import { IReactionDocument } from "@root/features/reactions/interfaces/reaction.interface";
 import { Server, Socket } from "socket.io";
 
 export let socketIOPostObject: Server;
@@ -10,7 +11,12 @@ export class SocketIOPostHandler {
 
   public listen(): void {
     this.io.on("connection", (socket: Socket) => {
-      console.log("Post socket io hdler");
+      socket.on("reaction", (reaction: IReactionDocument) => {
+        this.io.emit('update reaction', reaction)
+      });
+      socket.on("comment", (reaction: IReactionDocument) => {
+        this.io.emit('update comment', reaction)
+      });
     });
   }
 }

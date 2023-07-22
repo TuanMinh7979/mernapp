@@ -51,14 +51,16 @@ export class Add {
     //! Socket:
     socketIOFollowerObject.emit("add follower", addFollowerData);
 
+    // list  follower:
     const addFollowerToCache: Promise<void> = followerCache.saveFollowerToCache(
-      `follower:${followeeId}`,
-      `${req.currentUser?.userId}`
+      `follower:${req.currentUser?.userId}`,
+      followeeId
     );
+    // list following:
     const addFollowingToCache: Promise<void> =
       followerCache.saveFollowerToCache(
-        `following:${req.currentUser?.userId}`,
-        followeeId
+        `following:${followeeId}`,
+        `${req.currentUser?.userId}`
       );
     await Promise.all([addFollowerToCache, addFollowingToCache]);
     //! Queue:

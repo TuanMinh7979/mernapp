@@ -22,13 +22,13 @@ export class Add {
     // update count in cache\
     //! Cache:
     const updateFollowersCount: Promise<void> =
-      followerCache.updateFollowersCountInCache(
+      followerCache.updateFolloweCountInCache(
         `${followeeId}`,
         "followersCount",
         1
       );
     const updateFollowingCount: Promise<void> =
-      followerCache.updateFollowersCountInCache(
+      followerCache.updateFolloweCountInCache(
         `${req.currentUser?.userId}`,
         "followingCount",
         1

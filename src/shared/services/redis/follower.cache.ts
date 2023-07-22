@@ -34,7 +34,7 @@ export class FollowerCache extends BaseCache {
   //*   key:
   //*   value:
   //*   Res:void
-  public async removeFollowerFromCache(
+  public async removeFollowFromCache(
     key: string,
     value: string
   ): Promise<void> {
@@ -54,7 +54,7 @@ export class FollowerCache extends BaseCache {
   //*   value: new value
   //*   Res:void
   //* update users:key hash object property(followersCount, followingCount)
-  public async updateFollowersCountInCache(
+  public async updateFolloweCountInCache(
     userId: string,
     prop: string,
     value: number

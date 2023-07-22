@@ -9,6 +9,7 @@ import { IUserDocument } from "@user/interface/user.interface";
 import { IFollowerData } from "../interfaces/follower.interface";
 import { FollowerModel } from "../models/follower.schema";
 import { socketIOFollowerObject } from "@socket/follower";
+import { followQueue } from "@service/queue/follow.queue";
 
 const followerCache: FollowerCache = new FollowerCache();
 const userCache: UserCache = new UserCache();
@@ -46,11 +47,11 @@ export class Add {
       cacheFollower,
       cacheFollowee,
     ]);
+    const followObjectId: ObjectId = new ObjectId();
     const addFollowerData: IFollowerData = Add.prototype.userData(response[0]);
     //send data to client using socket io
     //! Socket:
-    socketIOFollowerObject.emit("add follower", addFollowerData);
-
+    socketIOFollowerObject.emit("add follow", addFollowerData);
     // list  follower:
     const addFollowerToCache: Promise<void> = followerCache.saveFollowerToCache(
       `follower:${req.currentUser?.userId}`,
@@ -64,6 +65,12 @@ export class Add {
       );
     await Promise.all([addFollowerToCache, addFollowingToCache]);
     //! Queue:
+    followQueue.addFollowJob("addFollowToDB", {
+      keyOne: `${req.currentUser?.userId}`,
+      keyTwo: followeeId,
+      username: req.currentUser?.username,
+      followDocumentId: followObjectId,
+    });
     res.status(HTTP_STATUS.OK).json({ message: "Following user now" });
   }
 

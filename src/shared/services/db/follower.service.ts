@@ -1,9 +1,11 @@
+import { IFollowerData } from "@root/features/follower/interfaces/follower.interface";
 import { FollowerModel } from "@root/features/follower/models/follower.schema";
 import { UserCache } from "@service/redis/user.cache";
 import { UserModel } from "@user/models/user.schema";
 import { map } from "lodash";
 import { BulkWriteResult } from "mongodb";
-import mongoose, { ObjectId, mongo } from "mongoose";
+import mongoose, { mongo } from "mongoose";
+import { ObjectId } from "mongodb";
 const userCache: UserCache = new UserCache();
 
 class FollowerService {
@@ -81,15 +83,110 @@ class FollowerService {
     await Promise.all([unfollow, users]);
   }
 
-  //   public async getFolloweeData(
-  //     userObjectId: ObjectId
-  //   ): Promise<IFollowerData[]> {}
+  //* Params:
+  //* userObjectId:  get all idol of a fan
+  //* Res: IFollowerData[]
+  public async getFolloweeData(
+    userObjectId: ObjectId
+  ): Promise<IFollowerData[]> {
+    const followee: IFollowerData[] = await FollowerModel.aggregate([
+      { $match: { followerId: userObjectId } },
+      {
+        $lookup: {
+          from: "User",
+          localField: "followeeId",
+          foreignField: "_id",
+          as: "followeeId",
+        },
+      },
+      { $unwind: "$followeeId" },
+      {
+        $lookup: {
+          from: "Auth",
+          localField: "followeeId.authId",
+          foreignField: "_id",
+          as: "authId",
+        },
+      },
+      { $unwind: "$authId" },
+      {
+        $addFields: {
+          _id: "$followeeId._id", //UserModel._id
+          username: "$authId.username", //AuthModel.username
+          avatarColor: "$authId.avatarColor",
+          uId: "$authId.uId",
+          postCount: "$followeeId.postCount",
+          followersCount: "$followeeId.followersCount",
+          followingCount: "$followeeId.followingCount",
+          profilePicture: "$followeeId.profilePicture",
+          userProfile: "$followeeId.userProfile",
+        },
+      },
+      {
+        $project: {
+          authId: 0,
+          followerId: 0,
+          followeeId: 0,
+          createdAt: 0,
+          __v: 0,
+        },
+      },
+    ]);
+    return followee;
+  }
+  //* Params:
+  //* userObjectId:  get all fan of a idol
+  //* Res: IFollowerData[]
+  public async getFollowerData(
+    userObjectId: ObjectId
+  ): Promise<IFollowerData[]> {
+    const follower: IFollowerData[] = await FollowerModel.aggregate([
+      { $match: { followeeId: userObjectId } },
+      {
+        $lookup: {
+          from: "User",
+          localField: "followerId",
+          foreignField: "_id",
+          as: "followerId",
+        },
+      },
+      { $unwind: "$followerId" },
+      {
+        $lookup: {
+          from: "Auth",
+          localField: "followerId.authId",
+          foreignField: "_id",
+          as: "authId",
+        },
+      },
+      { $unwind: "$authId" },
+      {
+        $addFields: {
+          _id: "$followerId._id", //UserModel._id
+          username: "$authId.username", //AuthModel.username
+          avatarColor: "$authId.avatarColor",
+          uId: "$authId.uId",
+          postCount: "$followerId.postCount",
+          followersCount: "$followerId.followersCount",
+          followingCount: "$followerId.followingCount",
+          profilePicture: "$followerId.profilePicture",
+          userProfile: "$followerId.userProfile",
+        },
+      },
+      {
+        $project: {
+          authId: 0,
+          followerId: 0,
+          followeeId: 0,
+          createdAt: 0,
+          __v: 0,
+        },
+      },
+    ]);
+    return follower;
+  }
 
-  //   public async getFollowerData(
-  //     userObjectId: ObjectId
-  //   ): Promise<IFollowerData[]> {}
-
-  //   public async getFolloweesIds(userId: string): Promise<string[]> {}
+ 
 }
 
 export const followerService: FollowerService = new FollowerService();

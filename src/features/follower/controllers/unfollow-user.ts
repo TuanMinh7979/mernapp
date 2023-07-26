@@ -15,12 +15,14 @@ export class Remove {
       `following:${followeeId}`,
       `${followerId}`
     );
+    // ! Cache:
     const removeFolloweeFromCache: Promise<void> = followerCache.removeFollowFromCache(`follower:${followerId}`, followeeId);
 
     const followersCount: Promise<void> = followerCache.updateFolloweCountInCache(`${followeeId}`, 'followersCount', -1);
     const followeeCount: Promise<void> = followerCache.updateFolloweCountInCache(`${followerId}`, 'followingCount', -1);
     await Promise.all([removeFollowerFromCache, removeFolloweeFromCache, followersCount, followeeCount]);
 
+    // ! Queue:
     followQueue.addFollowJob('removeFollowFromDB', {
       keyOne: `${followeeId}`,
       keyTwo: `${followerId}`

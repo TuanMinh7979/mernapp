@@ -7,6 +7,7 @@ import { ServerError } from "@global/helpers/error-handler";
 import { UserCache } from "@service/redis/user.cache";
 import { IFollowerData } from "@root/features/follower/interfaces/follower.interface";
 import { IUserDocument } from "@user/interface/user.interface";
+import { Helpers } from "@global/helpers/helper";
 const log: Logger = config.createLogger("followersCache");
 const userCache: UserCache = new UserCache();
 
@@ -71,12 +72,11 @@ export class FollowerCache extends BaseCache {
     }
   }
 
-
-   //*   Params:
-  //  *key: 
-   //*   Res:
+  //*   Params:
+  //  *key:
+  //*   Res:
   // get from follwing list object
-   public async getFollowersFromCache(key: string): Promise<IFollowerData[]> {
+  public async getFollowersFromCache(key: string): Promise<IFollowerData[]> {
     try {
       if (!this.client.isOpen) {
         await this.client.connect();
@@ -84,7 +84,9 @@ export class FollowerCache extends BaseCache {
       const response: string[] = await this.client.LRANGE(key, 0, -1);
       const list: IFollowerData[] = [];
       for (const item of response) {
-        const user: IUserDocument = (await userCache.getUserFromCache(item)) as IUserDocument;
+        const user: IUserDocument = (await userCache.getUserFromCache(
+          item
+        )) as IUserDocument;
         const data: IFollowerData = {
           _id: new mongoose.Types.ObjectId(user._id),
           username: user.username!,
@@ -94,16 +96,53 @@ export class FollowerCache extends BaseCache {
           followingCount: user.followingCount,
           profilePicture: user.profilePicture,
           uId: user.uId!,
-          userProfile: user
+          userProfile: user,
         };
         list.push(data);
       }
       return list;
     } catch (error) {
       log.error(error);
-      throw new ServerError('Server error. Try again.');
+      throw new ServerError("Server error. Try again.");
     }
   }
 
+  //*   Params:
+  //  *key:  key of users:key Hash Object
+  //  *prop: block or blockBy property
+  //  *value: value to add / remove in array block[]/blockBy[]
+  //  *type: block | unblock
+  //*   Res:
+  public async updateBlockedUserPropInCache(
+    key: string,
+    prop: string,
+    value: string,
+    type: "block" | "unblock"
+  ): Promise<void> {
+    try {
+      if (!this.client.isOpen) {
+        await this.client.connect();
+      }
 
+      const response: string = (await this.client.HGET(
+        `users:${key}`,
+        prop
+      )) as string;
+      if (!response) return;
+      const multi: ReturnType<typeof this.client.multi> = this.client.multi();
+      let blocked: string[] = Helpers.parseJson(response) as string[];
+      if (type === "block") {
+        blocked = [...blocked, value];
+      } else {
+        remove(blocked, (id: string) => id === value);
+        blocked = [...blocked];
+      }
+      //  * update
+      multi.HSET(`users:${key}`, `${prop}`, JSON.stringify(blocked));
+      await multi.exec();
+    } catch (error) {
+      log.error(error);
+      throw new ServerError("Server error. Try again.");
+    }
+  }
 }

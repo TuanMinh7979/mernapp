@@ -3,6 +3,7 @@ import express, { Router } from "express";
 import { Add } from "../controllers/follower-user";
 import { Remove } from "../controllers/unfollow-user";
 import { Get } from "../controllers/get-follow";
+import { BlockUser } from "../controllers/block-user";
 
 class FollowerRoutes {
   private router: Router;
@@ -12,7 +13,7 @@ class FollowerRoutes {
   }
 
   public routes(): Router {
-    // get all my fan
+    // get all someone's fan
     this.router.get(
       "/user/follower/:userId",
       authMiddleware.checkAuthencation,
@@ -29,15 +30,21 @@ class FollowerRoutes {
       authMiddleware.checkAuthencation,
       Add.prototype.follower
     );
-    this.router.put(
-      "/user/follow/:followeeId",
-      authMiddleware.checkAuthencation,
-      Add.prototype.follower
-    );
+
     this.router.put(
       "/user/unfollow/:followeeId/:followerId",
       authMiddleware.checkAuthencation,
       Remove.prototype.follower
+    );
+    this.router.put(
+      "/user/block/:otherId",
+      authMiddleware.checkAuthencation,
+      BlockUser.prototype.block
+    );
+    this.router.put(
+      "/user/unblock/:otherId",
+      authMiddleware.checkAuthencation,
+      BlockUser.prototype.unblock
     );
 
     return this.router;

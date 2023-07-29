@@ -6,10 +6,10 @@ import { mailTransport } from "@service/emails/mail.transport";
 const log: Logger = config.createLogger("emailWorker");
 
 class EmailWorker {
-  async addNotificationEmail( job: Job, done: DoneCallback): Promise<void> {
+  async addNotificationEmail(job: Job, done: DoneCallback): Promise<void> {
     try {
-      const { template , receiverEmail, subject} = job.data;
-      console.log("IN WORKER ",receiverEmail)
+      const { template, receiverEmail, subject } = job.data;
+      log.info(receiverEmail);
       await mailTransport.sendEmail(receiverEmail, subject, template);
       //   percent
       job.progress(100);
@@ -21,4 +21,4 @@ class EmailWorker {
   }
 }
 
-export const emailWorker:EmailWorker = new EmailWorker();
+export const emailWorker: EmailWorker = new EmailWorker();

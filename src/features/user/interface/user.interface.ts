@@ -1,9 +1,9 @@
 import mongoose, { Document } from 'mongoose';
-import { ObjectId } from 'mongodb';
+
 
 export interface IUserDocument extends Document {
-  _id: string | ObjectId;
-  authId: string | ObjectId;
+  _id: string | mongoose.Types.ObjectId;
+  authId: string | mongoose.Types.ObjectId;
   username?: string;
   email?: string;
   password?: string;

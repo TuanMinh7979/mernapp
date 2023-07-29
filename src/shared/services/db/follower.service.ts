@@ -6,6 +6,15 @@ import { map } from "lodash";
 import { BulkWriteResult } from "mongodb";
 import mongoose, { mongo } from "mongoose";
 import { ObjectId } from "mongodb";
+import {
+  INotificationDocument,
+  INotificationTemplate,
+} from "@notification/interfaces/notification.inteface";
+import { NotificationModel } from "@notification/models/notification.scheme";
+import { socketIONotificationObject } from "@socket/notification";
+import { notificationTemplate } from "@service/emails/template/notifications/notification-template";
+import { emailQueue } from "@service/queue/email.queue";
+import { userService } from "./user.service";
 const userCache: UserCache = new UserCache();
 
 class FollowerService {
@@ -48,7 +57,54 @@ class FollowerService {
         },
       },
     ]);
-    await Promise.all([users, UserModel.findOne({ _id: followeeId })]);
+    const response = await Promise.all([
+      users,
+      userService.getUserById(followeeId),
+    ]);
+    console.log("------------======>>>>>>", response);
+
+    // ! CMN NOTI:
+    if (response[1]?.notifications.follows && userId !== followeeId) {
+      const notificationModel: INotificationDocument = new NotificationModel();
+      const notifications = await notificationModel.insertNotification({
+        userFrom: userId,
+        userTo: followeeId,
+        message: `${username} follow you`,
+        notificationType: "follow",
+        entityId: new mongoose.Types.ObjectId(userId),
+        createdItemId: new mongoose.Types.ObjectId(newFollow._id),
+        createdAt: new Date(),
+        comment: "",
+        post: "",
+        imgId: "",
+        imgVersion: "",
+        gifUrl: "",
+        reaction: "",
+      });
+
+      //send to client with socketIO
+      // ! Socket:
+      socketIONotificationObject.emit("insert notification", notifications, {
+        followeeId,
+      });
+      //send to emailQueue
+      //  ! Email:
+      const templateParams: INotificationTemplate = {
+        username: response[1]?.username!, // userTo
+        message: `${username} follow on you`, //user From
+        header: "Notification of new Follow",
+      };
+
+      const template: string =
+        notificationTemplate.notificationMessageTemplate(templateParams);
+      // ! Queue:
+
+      emailQueue.addEmailJob("followNotiEmail", {
+        receiverEmail: response[1].email!,
+        template,
+        subject: "Follow Notification ",
+      });
+    }
   }
   //* Params:
   //* followeeId: famous people
@@ -185,8 +241,6 @@ class FollowerService {
     ]);
     return follower;
   }
-
- 
 }
 
 export const followerService: FollowerService = new FollowerService();

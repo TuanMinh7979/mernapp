@@ -21,8 +21,8 @@ export interface INotificationDocument extends Document {
 }
 
 export interface INotification {
-  userTo: string;
-  userFrom: string;
+  userTo: string ;
+  userFrom: string ;
   message: string;
   notificationType: string;
   entityId: mongoose.Types.ObjectId;

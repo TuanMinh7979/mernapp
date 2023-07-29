@@ -35,6 +35,7 @@ class UserService {
   //   * userId:_id of User collection
   //   * Res: IUserDocument
   public async getUserById(userId: string): Promise<IUserDocument> {
+    log.info("getUserById.params1: ", userId);
     const users: IUserDocument[] = await UserModel.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(userId) } },
       {
@@ -79,6 +80,7 @@ class UserService {
 
       {
         $project: {
+          _id:"$userId._id",
           username: 1,
           uId: 1,
           email: 1,

@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 
 class NotificationService {
   // * Param:
-  //   *userId: get notification of this userId
+  //   *userId: get notification of this userId(noti to this userId)
   // * Res:
   public async getNotifications(
     userId: string
@@ -57,14 +57,18 @@ class NotificationService {
       ]);
     return notifications;
   }
-
+  // * Param:
+  //   *notificationId: update noti as readed
+  // * Res:
   public async updateNotification(notificationId: string): Promise<void> {
     await NotificationModel.updateOne(
       { _id: notificationId },
       { $set: { read: true } }
     ).exec();
   }
-
+  // * Param:
+  //   *notificationId: delete noti
+  // * Res:
   public async deleteNotification(notificationId: string): Promise<void> {
     await NotificationModel.deleteOne({ _id: notificationId }).exec();
   }

@@ -1,4 +1,9 @@
 import { Helpers } from "@global/helpers/helper";
+import {
+  INotificationDocument,
+  INotificationTemplate,
+} from "@notification/interfaces/notification.inteface";
+import { NotificationModel } from "@notification/models/notification.scheme";
 import { IPostDocument } from "@post/interfaces/post.interface";
 import { PostModel } from "@post/models/post.schema";
 import {
@@ -7,19 +12,26 @@ import {
   IReactionJob,
 } from "@root/features/reactions/interfaces/reaction.interface";
 import { ReactionModel } from "@root/features/reactions/models/reaction.shema";
+import { notificationTemplate } from "@service/emails/template/notifications/notification-template";
+import { emailQueue } from "@service/queue/email.queue";
 import { UserCache } from "@service/redis/user.cache";
+import { socketIONotificationObject } from "@socket/notification";
 import { IUserDocument } from "@user/interface/user.interface";
 
 import { omit } from "lodash";
-import mongoose from "mongoose";
+import mongoose, { ObjectId } from "mongoose";
+import { userService } from "./user.service";
+import Logger from "bunyan";
+import { config } from "@root/config";
 
 const userCache: UserCache = new UserCache();
-
+const log: Logger = config.createLogger("ReactService");
 class ReactionService {
   //   * Params:
   //   * reactionData
   //   * Res: IUserDocument
   public async addReactionDataToDB(reactionData: IReactionJob): Promise<void> {
+    log.info("-----------------------");
     const {
       postId,
       userTo,
@@ -40,6 +52,7 @@ class ReactionService {
     // Add and Update (upsert: true)
     const updatedReaction: [IUserDocument, IReactionDocument, IPostDocument] =
       (await Promise.all([
+        userService.getUserByUId(userTo!),
         ReactionModel.replaceOne(
           { postId, type: previousReaction, username },
           updatedReactionObject,
@@ -56,37 +69,42 @@ class ReactionService {
           { new: true }
         ),
       ])) as unknown as [IUserDocument, IReactionDocument, IPostDocument];
-
-    // if (updatedReaction[0].notifications.reactions && userTo !== userFrom) {
-    //   const notificationModel: INotificationDocument = new NotificationModel();
-    //   const notifications = await notificationModel.insertNotification({
-    //     userFrom: userFrom as string,
-    //     userTo: userTo as string,
-    //     message: `${username} reacted to your post.`,
-    //     notificationType: 'reactions',
-    //     entityId: new mongoose.Types.ObjectId(postId),
-    //     createdItemId: new mongoose.Types.ObjectId(updatedReaction[1]._id!),
-    //     createdAt: new Date(),
-    //     comment: '',
-    //     post: updatedReaction[2].post,
-    //     imgId: updatedReaction[2].imgId!,
-    //     imgVersion: updatedReaction[2].imgVersion!,
-    //     gifUrl: updatedReaction[2].gifUrl!,
-    //     reaction: type!
-    //   });
-    //   socketIONotificationObject.emit('insert notification', notifications, { userTo });
-    //   const templateParams: INotificationTemplate = {
-    //     username: updatedReaction[0].username!,
-    //     message: `${username} reacted to your post.`,
-    //     header: 'Post Reaction Notification'
-    //   };
-    //   const template: string = notificationTemplate.notificationMessageTemplate(templateParams);
-    //   emailQueue.addEmailJob('reactionsEmail', {
-    //     receiverEmail: updatedReaction[0].email!,
-    //     template,
-    //     subject: 'Post reaction notification'
-    //   });
-    // }
+    log.info(updatedReaction);
+    // ! CMN NOTI:
+    if (updatedReaction[0].notifications.reactions && userTo !== userFrom) {
+      log.info();
+      const notificationModel: INotificationDocument = new NotificationModel();
+      const notifications = await notificationModel.insertNotification({
+        userFrom: userFrom!,
+        userTo: updatedReaction[0]._id as string,
+        message: `${username} reacted to your post.`,
+        notificationType: "reactions",
+        entityId: new mongoose.Types.ObjectId(postId),
+        createdItemId: new mongoose.Types.ObjectId(updatedReaction[1]._id!),
+        createdAt: new Date(),
+        comment: "",
+        post: updatedReaction[2].post,
+        imgId: updatedReaction[2].imgId!,
+        imgVersion: updatedReaction[2].imgVersion!,
+        gifUrl: updatedReaction[2].gifUrl!,
+        reaction: type!,
+      });
+      socketIONotificationObject.emit("insert notification", notifications, {
+        userTo,
+      });
+      const templateParams: INotificationTemplate = {
+        username: updatedReaction[0].username!,
+        message: `${username} reacted to your post.`,
+        header: "Post Reaction Notification",
+      };
+      const template: string =
+        notificationTemplate.notificationMessageTemplate(templateParams);
+      emailQueue.addEmailJob("reactionsEmail", {
+        receiverEmail: updatedReaction[0].email!,
+        template,
+        subject: "Post reaction notification",
+      });
+    }
   }
 
   //   * Params:
@@ -127,7 +145,7 @@ class ReactionService {
   }
   // * get a reaction of a user on a post
   //   * Params:
-  //   * postId: 
+  //   * postId:
   //   * username:
   //   * Res: [IReactionDocument[], len]
   public async getAReactionByAUserOfAPost(

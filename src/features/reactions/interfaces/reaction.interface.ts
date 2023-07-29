@@ -26,7 +26,7 @@ export interface IReactionJob {
   postId: string;
   username: string;
   previousReaction: string;
-  userTo?: string;
+  userTo?: string;//uId
   userFrom?: string;
   type?: string;
   reactionObject?: IReactionDocument;

@@ -39,15 +39,15 @@ class CommentService {
 
     //! Cache:
     // const user = userCache.getUserFromCache(userTo);
-    const user = userService.getUserByUId(userTo);
+    const targetUser = userService.getUserByUId(userTo);
 
-    const response = await Promise.all([comments, post, user]);
+    const response = await Promise.all([comments, post, targetUser]);
     // ! CMN NOTI:
     if (response[2]?.notifications.comments && userFrom !== userTo) {
       const notificationModel: INotificationDocument = new NotificationModel();
       const notifications = await notificationModel.insertNotification({
         userFrom,
-        userTo,
+        userTo: response[2]._id as string,
         message: `${username} commented on your post`,
         notificationType: "comment",
         entityId: new mongoose.Types.ObjectId(postId),

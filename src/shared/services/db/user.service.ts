@@ -1,9 +1,12 @@
 import { IAuthDocument } from "@auth/interfaces/auth.interface";
 import { AuthModel } from "@auth/models/auth.schema";
+import { config } from "@root/config";
 import { IUserDocument } from "@user/interface/user.interface";
 import { UserModel } from "@user/models/user.schema";
+import Logger from "bunyan";
 import mongoose from "mongoose";
 
+const log: Logger = config.createLogger("UserService");
 class UserService {
   public async addUserData(data: IUserDocument): Promise<void> {
     await UserModel.create(data);
@@ -32,22 +35,20 @@ class UserService {
   //   * userId:_id of User collection
   //   * Res: IUserDocument
   public async getUserById(userId: string): Promise<IUserDocument> {
-    
-
     const users: IUserDocument[] = await UserModel.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(userId) } },
-      // {
-      //   $lookup: {
-      //     from: "Auth",
-      //     localField: "authId",
-      //     foreignField: "_id",
-      //     as: "authId",
-      //   },
-      // },
-      // { $unwind: "$authId" },
-      // { $project: this.aggregateProject() },
+      {
+        $lookup: {
+          from: "Auth",
+          localField: "authId",
+          foreignField: "_id",
+          as: "authId",
+        },
+      },
+      { $unwind: "$authId" },
+      { $project: this.aggregateProject() },
     ]);
-    console.log(users);
+    log.info("getUserById=> ", users);
 
     return users[0];
   }

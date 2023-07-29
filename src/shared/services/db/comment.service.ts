@@ -42,7 +42,7 @@ class CommentService {
     const user = userService.getUserByUId(userTo);
 
     const response = await Promise.all([comments, post, user]);
-
+    // ! CMN NOTI:
     if (response[2]?.notifications.comments && userFrom !== userTo) {
       const notificationModel: INotificationDocument = new NotificationModel();
       const notifications = await notificationModel.insertNotification({

@@ -7,9 +7,7 @@ class BlockUserService {
   //* userId:
   //* followerId:
   //* Res
-  public async blockUser(userId: string, otherUserId: string): Promise<void> {
-    console.log(userId, otherUserId);
-    
+  public async blockUser(userId: string, otherUserId: string): Promise<void> {    
     UserModel.bulkWrite([
       {
         updateOne: {

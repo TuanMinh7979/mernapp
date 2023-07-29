@@ -1,3 +1,5 @@
+import { IAuthDocument } from "@auth/interfaces/auth.interface";
+import { AuthModel } from "@auth/models/auth.schema";
 import { IUserDocument } from "@user/interface/user.interface";
 import { UserModel } from "@user/models/user.schema";
 import mongoose from "mongoose";
@@ -30,6 +32,8 @@ class UserService {
   //   * userId:_id of User collection
   //   * Res: IUserDocument
   public async getUserById(userId: string): Promise<IUserDocument> {
+    
+
     const users: IUserDocument[] = await UserModel.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(userId) } },
       // {
@@ -43,9 +47,62 @@ class UserService {
       // { $unwind: "$authId" },
       // { $project: this.aggregateProject() },
     ]);
+    console.log(users);
+
     return users[0];
   }
 
+  //   * Params:
+  //   * uId:uId of Auth collection
+  //   * Res: IUserDocument
+  public async getUserByUId(uId: string): Promise<IUserDocument> {
+    const users: IUserDocument[] = await AuthModel.aggregate([
+      {
+        $match: {
+          uId: uId,
+        },
+      },
+
+      {
+        $lookup: {
+          from: "User",
+          localField: "_id",
+          foreignField: "authId",
+          as: "userId",
+        },
+      },
+
+      {
+        $unwind: "$userId",
+      },
+
+      {
+        $project: {
+          username: 1,
+          uId: 1,
+          email: 1,
+          avatarColor: 1,
+          createdAt: 1,
+
+          postsCount: "$userId.postsCount",
+          work: "$userId.work",
+          school: "$userId.school",
+          quote: "$userId.quote",
+          location: "$userId.location",
+          blocked: "$userId.blocked",
+          blockedBy: "$userId.blockedBy",
+          followersCount: "$userId.followersCount",
+          followingCount: "$userId.followingCount",
+          notifications: "$userId.notifications",
+          social: "$userId.social",
+          bgImageVersion: "$userId.bgImageVersion",
+          bgImageId: "$userId.bgImageId",
+          profilePicture: "$userId.profilePicture",
+        },
+      },
+    ]);
+    return users[0];
+  }
   private aggregateProject() {
     return {
       _id: 1,

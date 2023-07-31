@@ -12,6 +12,7 @@ import { upload } from "@global/helpers/cloudinary-upload";
 import { BadRequestError } from "@global/helpers/error-handler";
 import { UploadApiErrorResponse, UploadApiResponse } from "cloudinary";
 import { NumericDictionary } from "lodash";
+import { imageQueue } from "@service/queue/image.queue";
 const postCache: PostCache = new PostCache();
 export class Create {
   // * Params: 
@@ -56,6 +57,7 @@ export class Create {
       key: req.currentUser!.userId,
       value: createdPost,
     });
+   
     res
       .status(HTTP_STATUS.CREATED)
       .json({ message: "Post created successfully" });
@@ -109,11 +111,12 @@ export class Create {
       key: req.currentUser!.userId,
       value: createdPost,
     });
-    // imageQueue.addImageJob("addImageToDB", {
-    //   key: `${req.currentUser!.userId}`,
-    //   imgId: result.public_id,
-    //   imgVersion: result.version.toString(),
-    // });
+    imageQueue.addImageJob("addImageToDB", {
+      key: `${req.currentUser!.userId}`,
+      imgId: result.public_id,
+      imgVersion: result.version.toString(),
+    });
+
     res
       .status(HTTP_STATUS.CREATED)
       .json({ message: "Post created with image successfully" });

@@ -17,10 +17,16 @@ export class Helpers {
   static parseJson(prop: string): any {
     try {
       return JSON.parse(prop);
-    } catch (err:any) {
+    } catch (err: any) {
       console.log("_________________________________LOG PARSE JSON ", prop);
-      
+
       return prop;
     }
+  }
+
+  static isDataURL(value: string): boolean {
+    const dataUrlRegex =
+      /^\s*data:([a-z]+\/[a-z0-9-+.]+(;[a-z-]+=[a-z0-9-]+)?)?(;base64)?,([a-z0-9!$&',()*+;=\-._~:@\\/?%\s]*)\s*$/i;
+    return dataUrlRegex.test(value);
   }
 }

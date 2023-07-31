@@ -21,7 +21,7 @@ export function upload(
         result: UploadApiResponse | undefined
       ) => {
         if (err) {
-            console.log(err)
+            console.log("ERRRRRRRRRRRRRR",err)
             // *bất cứ khi nào có lỗi return lỗi đó về nơi gọi hàm upload
           resolve(err);
         }

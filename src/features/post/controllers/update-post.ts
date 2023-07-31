@@ -9,6 +9,7 @@ import { joiValidation } from "@global/decorators/joi-validation.decorators";
 import { UploadApiErrorResponse, UploadApiResponse } from "cloudinary";
 import { upload } from "@global/helpers/cloudinary-upload";
 import { BadRequestError } from "@global/helpers/error-handler";
+import { imageQueue } from "@service/queue/image.queue";
 
 const postCache: PostCache = new PostCache();
 
@@ -39,7 +40,7 @@ export class Update {
       imgVersion,
     } as IPostDocument;
 
-    // ! Cache: 
+    // ! Cache:
     const postUpdated: IPostDocument = await postCache.updatePostInCache(
       postId,
       updatedPost
@@ -59,7 +60,7 @@ export class Update {
     if (imgId && imgVersion) {
       Update.prototype.updatePost(req);
     } else {
-       // ! Upload:
+      // ! Upload:
       const result: UploadApiResponse =
         await Update.prototype.addImageToExistingPost(req);
       if (!result.public_id) {
@@ -97,15 +98,16 @@ export class Update {
       imgVersion: imgVersion ? imgVersion : "",
     } as IPostDocument;
 
-     // ! Cache:
+    // ! Cache:
     const postUpdated: IPostDocument = await postCache.updatePostInCache(
       postId,
       updatedPost
     );
-     // ! Socket:
+    // ! Socket:
     socketIOPostObject.emit("update post", postUpdated, "posts");
-     // ! Queue:
+    // ! Queue:
     postQueue.addPostJob("updatePostInDB", { key: postId, value: postUpdated });
+   
   }
   // * Params:
   // * Res: void
@@ -118,12 +120,12 @@ export class Update {
       feelings,
       privacy,
       gifUrl,
-      profilePicture,
+      profilePicture, 
       image,
       video,
     } = req.body;
     const { postId } = req.params;
-     // ! Upload:
+    // ! Upload:
     const result: UploadApiResponse = (await upload(
       image
     )) as UploadApiResponse;
@@ -142,16 +144,20 @@ export class Update {
       imgVersion: image ? result.version.toString() : "",
     } as IPostDocument;
 
-     // ! Cache:
+    // ! Cache:
     const postUpdated: IPostDocument = await postCache.updatePostInCache(
       postId,
       updatedPost
     );
-     // ! Socket:
+    // ! Socket:
     socketIOPostObject.emit("update post", postUpdated, "posts");
-     // ! Queue:
+    // ! Queue:
     postQueue.addPostJob("updatePostInDB", { key: postId, value: postUpdated });
-
+    imageQueue.addImageJob("addImageToDB", {
+      key: `${req.currentUser!.userId}`,
+      imgId: result.public_id,
+      imgVersion: result.version.toString(),
+    });
     return result;
   }
 }

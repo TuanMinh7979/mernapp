@@ -62,7 +62,8 @@ export class SignUp {
       userObjectId
     );
 
-    userDataForCache.profilePicture = `https://res.cloudinary.com/djnekmzdf/image/upload/v${result.version}/${userObjectId}`;
+    userDataForCache.profilePicture = 
+    `https://res.cloudinary.com/djnekmzdf/image/upload/v${result.version}/${userObjectId}`;
     await userCache.saveUserToCache(`${userObjectId}`, uId, userDataForCache);
 
     // * remove some property for User Document

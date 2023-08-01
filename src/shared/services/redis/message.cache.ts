@@ -244,58 +244,68 @@ export class MessageCache extends BaseCache {
       throw new ServerError("Server error. Try again.");
     }
   }
-  //   // * Params:
-  //   // * Res:
-  //   public async updateChatMessages(
-  //     senderId: string,
-  //     receiverId: string
-  //   ): Promise<IMessageData> {
-  //     try {
-  //       if (!this.client.isOpen) {
-  //         await this.client.connect();
-  //       }
-  //       const userChatList: string[] = await this.client.LRANGE(
-  //         `chatList:${senderId}`,
-  //         0,
-  //         -1
-  //       );
-  //       const receiver: string = find(userChatList, (listItem: string) =>
-  //         listItem.includes(receiverId)
-  //       ) as string;
-  //       const parsedReceiver: IChatList = Helpers.parseJson(
-  //         receiver
-  //       ) as IChatList;
-  //       const messages: string[] = await this.client.LRANGE(
-  //         `messages:${parsedReceiver.conversationId}`,
-  //         0,
-  //         -1
-  //       );
-  //       const unreadMessages: string[] = filter(
-  //         messages,
-  //         (listItem: string) => !Helpers.parseJson(listItem).isRead
-  //       );
-  //       for (const item of unreadMessages) {
-  //         const chatItem = Helpers.parseJson(item) as IMessageData;
-  //         const index = findIndex(messages, (listItem: string) =>
-  //           listItem.includes(`${chatItem._id}`)
-  //         );
-  //         chatItem.isRead = true;
-  //         await this.client.LSET(
-  //           `messages:${chatItem.conversationId}`,
-  //           index,
-  //           JSON.stringify(chatItem)
-  //         );
-  //       }
-  //       const lastMessage: string = (await this.client.LINDEX(
-  //         `messages:${parsedReceiver.conversationId}`,
-  //         -1
-  //       )) as string;
-  //       return Helpers.parseJson(lastMessage) as IMessageData;
-  //     } catch (error) {
-  //       log.error(error);
-  //       throw new ServerError("Server error. Try again.");
-  //     }
-  //   }
+    // * Params:
+    // * Res:
+    // function to check all message object string item in messages:key list object as true 
+    public async updateChatMessages(
+      senderId: string,
+      receiverId: string
+    ): Promise<IMessageData> {
+      try {
+        if (!this.client.isOpen) {
+          await this.client.connect();
+        }
+        // get conversationId
+        const userChatList: string[] = await this.client.LRANGE(
+          `chatList:${senderId}`,
+          0,
+          -1
+        );
+        const receiver: string = find(userChatList, (listItem: string) =>
+          listItem.includes(receiverId)
+        ) as string;
+        const parsedReceiver: IChatList = Helpers.parseJson(
+          receiver
+        ) as IChatList;
+        // get conversationId
+
+        // get messages of conversation
+        const messages: string[] = await this.client.LRANGE(
+          `messages:${parsedReceiver.conversationId}`,
+          0,
+          -1
+        );
+
+        const unreadMessages: string[] = filter(
+          messages,
+          (listItem: string) => !Helpers.parseJson(listItem).isRead
+        );
+        for (const item of unreadMessages) {
+        
+          const messageStringObjectItem = Helpers.parseJson(item) as IMessageData;
+          //* find index in List Object messsages:key 
+          const index = findIndex(messages, (listItem: string) =>
+            listItem.includes(`${messageStringObjectItem._id}`)
+          );
+          messageStringObjectItem.isRead = true;
+          // * use index to set it to list object messages:key again
+          await this.client.LSET(
+            `messages:${messageStringObjectItem.conversationId}`,
+            index,
+            JSON.stringify(messageStringObjectItem)
+          );
+        }
+        //* get updated rs messages:key list object
+        const lastMessage: string = (await this.client.LINDEX(
+          `messages:${parsedReceiver.conversationId}`,
+          -1
+        )) as string;
+        return Helpers.parseJson(lastMessage) as IMessageData;
+      } catch (error) {
+        log.error(error);
+        throw new ServerError("Server error. Try again.");
+      }
+    }
   //   // * Params:
   //   // * Res:
   //   public async updateMessageReaction(

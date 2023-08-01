@@ -107,10 +107,10 @@ export class Add {
       `${req.currentUser!.userId}`,
       `${conversationObjectId}`
     );
-    // await messageCache.addChatMessageToCache(
-    //   `${conversationObjectId}`,
-    //   messageData
-    // );
+    await messageCache.addChatMessageToCache(
+      `${conversationObjectId}`,
+      messageData
+    );
     // chatQueue.addChatJob("addChatMessageToDB", messageData);
 
     res

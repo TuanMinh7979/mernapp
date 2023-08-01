@@ -58,23 +58,23 @@ export class MessageCache extends BaseCache {
   }
   // * Params:
   // * Res:
-//   public async addChatMessageToCache(
-//     conversationId: string,
-//     value: IMessageData
-//   ): Promise<void> {
-//     try {
-//       if (!this.client.isOpen) {
-//         await this.client.connect();
-//       }
-//       await this.client.RPUSH(
-//         `messages:${conversationId}`,
-//         JSON.stringify(value)
-//       );
-//     } catch (error) {
-//       log.error(error);
-//       throw new ServerError("Server error. Try again.");
-//     }
-//   }
+  public async addChatMessageToCache(
+    conversationId: string,
+    value: IMessageData
+  ): Promise<void> {
+    try {
+      if (!this.client.isOpen) {
+        await this.client.connect();
+      }
+      await this.client.RPUSH(
+        `messages:${conversationId}`,
+        JSON.stringify(value)
+      );
+    } catch (error) {
+      log.error(error);
+      throw new ServerError("Server error. Try again.");
+    }
+  }
 //   // * Params:
 //   // * Res:
 //   public async addChatUsersToCache(value: IChatUsers): Promise<IChatUsers[]> {

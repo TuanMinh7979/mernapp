@@ -144,15 +144,14 @@ class ChatService {
     reaction: string,
     type: "add" | "remove"
   ): Promise<void> {
+    await MessageModel.findOneAndUpdate(
+      { _id: messageId, reaction: { $elemMatch: { senderName: senderName } } },
+      { $pull: { reaction: { senderName } } }
+    );
     if (type === "add") {
       await MessageModel.updateOne(
         { _id: messageId },
         { $push: { reaction: { senderName, type: reaction } } }
-      ).exec();
-    } else {
-      await MessageModel.updateOne(
-        { _id: messageId },
-        { $pull: { reaction: { senderName } } }
       ).exec();
     }
   }

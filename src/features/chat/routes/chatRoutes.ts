@@ -1,4 +1,5 @@
 import { Add } from "@chat/controllers/add-chat-messages";
+import { Message } from "@chat/controllers/add-message-reaction";
 import { Delete } from "@chat/controllers/delete-chat-message";
 import { Get } from "@chat/controllers/get-chat-message";
 import { Update } from "@chat/controllers/update-chat-message";
@@ -48,7 +49,11 @@ class ChatRoutes {
       authMiddleware.checkAuthencation,
       Update.prototype.message
     );
-
+    this.router.put(
+      "/chat/message/reaction",
+      authMiddleware.checkAuthencation,
+      Message.prototype.reaction
+    );
     return this.router;
   }
 }

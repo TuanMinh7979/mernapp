@@ -132,6 +132,7 @@ class ChatService {
         { senderId: receiverId, receiverId: senderId, isRead: false },
       ],
     };
+    // update for sender and receiver, user update many
     await MessageModel.updateMany(query, { $set: { isRead: true } }).exec();
   }
 

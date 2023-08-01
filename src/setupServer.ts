@@ -21,6 +21,7 @@ import { SocketIOFollowerHandler } from "@socket/follower";
 import { SocketIOUserHandler } from "@socket/user";
 import { SocketIONotificationHandler } from "@socket/notification";
 import { SocketIOImageHandler } from "@socket/image";
+import { SocketIOChatHandler } from "@socket/chat";
 // import { CustomError, IErrorResponse } from './shared/globals/helpers/error-handler';
 const log: Logger = config.createLogger("server");
 const SERVER_PORT = 5000;
@@ -137,6 +138,7 @@ export class ChatappServer {
     const followerSocketHandler: SocketIOFollowerHandler =
       new SocketIOFollowerHandler(io);
     const userSocketHandler: SocketIOUserHandler = new SocketIOUserHandler(io);
+    const chatSocketHandler: SocketIOChatHandler = new SocketIOChatHandler(io);
     const notificationSocketHandler: SocketIONotificationHandler =
       new SocketIONotificationHandler();
     const imageSocketHandler: SocketIOImageHandler = new SocketIOImageHandler();
@@ -145,6 +147,7 @@ export class ChatappServer {
     userSocketHandler.listen();
     notificationSocketHandler.listen(io);
     imageSocketHandler.listen(io);
+    chatSocketHandler.listen();
   }
 }
 // /Generate a function to add two numbers

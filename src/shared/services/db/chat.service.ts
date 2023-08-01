@@ -47,6 +47,7 @@ class ChatService {
   ): Promise<IMessageData[]> {
     const messages: IMessageData[] = await MessageModel.aggregate([
       { $match: { $or: [{ senderId: userId }, { receiverId: userId }] } },
+      //   get last document use $group
       {
         $group: {
           _id: "$conversationId",

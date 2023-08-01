@@ -112,6 +112,7 @@ class ChatService {
         { $set: { deleteForMe: true } }
       ).exec();
     } else {
+      // delete for all user
       await MessageModel.updateOne(
         { _id: messageId },
         { $set: { deleteForMe: true, deleteForEveryone: true } }

@@ -10,6 +10,7 @@ import {
   IGetMessageFromCache,
 } from "@chat/interfaces/chat.interface";
 import { Helpers } from "@global/helpers/helper";
+import { IReaction } from "@root/features/reactions/interfaces/reaction.interface";
 
 const log: Logger = config.createLogger("messageCache");
 
@@ -244,128 +245,135 @@ export class MessageCache extends BaseCache {
       throw new ServerError("Server error. Try again.");
     }
   }
-    // * Params:
-    // * Res:
-    // function to check all message object string item in messages:key list object as true 
-    public async updateChatMessages(
-      senderId: string,
-      receiverId: string
-    ): Promise<IMessageData> {
-      try {
-        if (!this.client.isOpen) {
-          await this.client.connect();
-        }
-        // get conversationId
-        const userChatList: string[] = await this.client.LRANGE(
-          `chatList:${senderId}`,
-          0,
-          -1
-        );
-        const receiver: string = find(userChatList, (listItem: string) =>
-          listItem.includes(receiverId)
-        ) as string;
-        const parsedReceiver: IChatList = Helpers.parseJson(
-          receiver
-        ) as IChatList;
-        // get conversationId
-
-        // get messages of conversation
-        const messages: string[] = await this.client.LRANGE(
-          `messages:${parsedReceiver.conversationId}`,
-          0,
-          -1
-        );
-
-        const unreadMessages: string[] = filter(
-          messages,
-          (listItem: string) => !Helpers.parseJson(listItem).isRead
-        );
-        for (const item of unreadMessages) {
-        
-          const messageStringObjectItem = Helpers.parseJson(item) as IMessageData;
-          //* find index in List Object messsages:key 
-          const index = findIndex(messages, (listItem: string) =>
-            listItem.includes(`${messageStringObjectItem._id}`)
-          );
-          messageStringObjectItem.isRead = true;
-          // * use index to set it to list object messages:key again
-          await this.client.LSET(
-            `messages:${messageStringObjectItem.conversationId}`,
-            index,
-            JSON.stringify(messageStringObjectItem)
-          );
-        }
-        //* get updated rs messages:key list object
-        const lastMessage: string = (await this.client.LINDEX(
-          `messages:${parsedReceiver.conversationId}`,
-          -1
-        )) as string;
-        return Helpers.parseJson(lastMessage) as IMessageData;
-      } catch (error) {
-        log.error(error);
-        throw new ServerError("Server error. Try again.");
+  // * Params:
+  // * Res:
+  // function to check all message object string item in messages:key list object as true
+  public async updateChatMessages(
+    senderId: string,
+    receiverId: string
+  ): Promise<IMessageData> {
+    try {
+      if (!this.client.isOpen) {
+        await this.client.connect();
       }
+      // get conversationId
+      const userChatList: string[] = await this.client.LRANGE(
+        `chatList:${senderId}`,
+        0,
+        -1
+      );
+      const receiver: string = find(userChatList, (listItem: string) =>
+        listItem.includes(receiverId)
+      ) as string;
+      const parsedReceiver: IChatList = Helpers.parseJson(
+        receiver
+      ) as IChatList;
+      // get conversationId
+
+      // get messages of conversation
+      const messages: string[] = await this.client.LRANGE(
+        `messages:${parsedReceiver.conversationId}`,
+        0,
+        -1
+      );
+
+      const unreadMessages: string[] = filter(
+        messages,
+        (listItem: string) => !Helpers.parseJson(listItem).isRead
+      );
+
+      for (const item of unreadMessages) {
+        const messageStringObjectItem = Helpers.parseJson(item) as IMessageData;
+        //* find index in List Object messsages:key
+        const index = findIndex(messages, (listItem: string) =>
+          listItem.includes(`${messageStringObjectItem._id}`)
+        );
+        messageStringObjectItem.isRead = true;
+        // * use index to set it to list object messages:key again
+        await this.client.LSET(
+          `messages:${messageStringObjectItem.conversationId}`,
+          index,
+          JSON.stringify(messageStringObjectItem)
+        );
+      }
+      //* get updated rs messages:key list object
+      const lastMessage: string = (await this.client.LINDEX(
+        `messages:${parsedReceiver.conversationId}`,
+        -1
+      )) as string;
+      return Helpers.parseJson(lastMessage) as IMessageData;
+    } catch (error) {
+      log.error(error);
+      throw new ServerError("Server error. Try again.");
     }
-  //   // * Params:
-  //   // * Res:
-  //   public async updateMessageReaction(
-  //     conversationId: string,
-  //     messageId: string,
-  //     reaction: string,
-  //     senderName: string,
-  //     type: "add" | "remove"
-  //   ): Promise<IMessageData> {
-  //     try {
-  //       if (!this.client.isOpen) {
-  //         await this.client.connect();
-  //       }
-  //       const messages: string[] = await this.client.LRANGE(
-  //         `messages:${conversationId}`,
-  //         0,
-  //         -1
-  //       );
-  //       const messageIndex: number = findIndex(messages, (listItem: string) =>
-  //         listItem.includes(messageId)
-  //       );
-  //       const message: string = (await this.client.LINDEX(
-  //         `messages:${conversationId}`,
-  //         messageIndex
-  //       )) as string;
-  //       const parsedMessage: IMessageData = Helpers.parseJson(
-  //         message
-  //       ) as IMessageData;
-  //       const reactions: IReaction[] = [];
-  //       if (parsedMessage) {
-  //         remove(
-  //           parsedMessage.reaction,
-  //           (reaction: IReaction) => reaction.senderName === senderName
-  //         );
-  //         if (type === "add") {
-  //           reactions.push({ senderName, type: reaction });
-  //           parsedMessage.reaction = [...parsedMessage.reaction, ...reactions];
-  //           await this.client.LSET(
-  //             `messages:${conversationId}`,
-  //             messageIndex,
-  //             JSON.stringify(parsedMessage)
-  //           );
-  //         } else {
-  //           await this.client.LSET(
-  //             `messages:${conversationId}`,
-  //             messageIndex,
-  //             JSON.stringify(parsedMessage)
-  //           );
-  //         }
-  //       }
-  //       const updatedMessage: string = (await this.client.LINDEX(
-  //         `messages:${conversationId}`,
-  //         messageIndex
-  //       )) as string;
-  //       return Helpers.parseJson(updatedMessage) as IMessageData;
-  //     } catch (error) {
-  //       log.error(error);
-  //       throw new ServerError("Server error. Try again.");
-  //     }
-  //   }
+  }
+  // * Params:
+  // * Res:
+  public async updateMessageReaction(
+    conversationId: string,
+    messageId: string,
+    reaction: string,
+    senderName: string,
+    type: "add" | "remove"
+  ): Promise<IMessageData> {
+    try {
+      if (!this.client.isOpen) {
+        await this.client.connect();
+      }
+      // * get all messages item object string from messages:key List Object 
+      const messages: string[] = await this.client.LRANGE(
+        `messages:${conversationId}`,
+        0,
+        -1
+      );
+      // * find index of messageId string in list of messages object string
+      const messageIndex: number = findIndex(messages, (listItem: string) =>
+        listItem.includes(messageId)
+      );
+      //  * get item by index getted
+      //  TODO: also can use filter
+      const message: string = (await this.client.LINDEX(
+        `messages:${conversationId}`,
+        messageIndex
+      )) as string;
+      const parsedMessage: IMessageData = Helpers.parseJson(
+        message
+      ) as IMessageData;
+      const reactions: IReaction[] = [];
+      if (parsedMessage) {
+        remove(
+          parsedMessage.reaction,
+          (reaction: IReaction) => reaction.senderName === senderName
+        );
+        if (type === "add") {
+          // add more item(or replace old item by new item)
+          reactions.push({ senderName, type: reaction });
+          parsedMessage.reaction = [...parsedMessage.reaction, ...reactions];
+          await this.client.LSET(
+            `messages:${conversationId}`,
+            messageIndex,
+            JSON.stringify(parsedMessage)
+          );
+        } else {
+          // set removed reaction message object string item 
+          await this.client.LSET(
+            `messages:${conversationId}`,
+            messageIndex,
+            JSON.stringify(parsedMessage)
+          );
+        }
+      }
+      // get updated data
+      const updatedMessage: string = (await this.client.LINDEX(
+        `messages:${conversationId}`,
+        messageIndex
+      )) as string;
+      return Helpers.parseJson(updatedMessage) as IMessageData;
+    } catch (error) {
+      log.error(error);
+      throw new ServerError("Server error. Try again.");
+    }
+  }
   // * Params:
   // * Res:
   private async getChatUsersList(): Promise<IChatUsers[]> {

@@ -81,6 +81,7 @@ class ChatService {
 
   //  * Params:
   //  * Res:
+  // function get all messages from a conversation
   public async getMessages(
     senderId: ObjectId,
     receiverId: ObjectId,

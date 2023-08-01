@@ -133,6 +133,7 @@ export class MessageCache extends BaseCache {
   }
   // * Params:
   // * Res:
+  // function get all messages from all conversations
   public async getUserConversationList(key: string): Promise<IMessageData[]> {
     try {
       if (!this.client.isOpen) {
@@ -160,47 +161,48 @@ export class MessageCache extends BaseCache {
       throw new ServerError("Server error. Try again.");
     }
   }
-//   // * Params:
-//   // * Res:
-//   public async getChatMessagesFromCache(
-//     senderId: string,
-//     receiverId: string
-//   ): Promise<IMessageData[]> {
-//     try {
-//       if (!this.client.isOpen) {
-//         await this.client.connect();
-//       }
-//       const userChatList: string[] = await this.client.LRANGE(
-//         `chatList:${senderId}`,
-//         0,
-//         -1
-//       );
-//       const receiver: string = find(userChatList, (listItem: string) =>
-//         listItem.includes(receiverId)
-//       ) as string;
-//       const parsedReceiver: IChatList = Helpers.parseJson(
-//         receiver
-//       ) as IChatList;
-//       if (parsedReceiver) {
-//         const userMessages: string[] = await this.client.LRANGE(
-//           `messages:${parsedReceiver.conversationId}`,
-//           0,
-//           -1
-//         );
-//         const chatMessages: IMessageData[] = [];
-//         for (const item of userMessages) {
-//           const chatItem = Helpers.parseJson(item) as IMessageData;
-//           chatMessages.push(chatItem);
-//         }
-//         return chatMessages;
-//       } else {
-//         return [];
-//       }
-//     } catch (error) {
-//       log.error(error);
-//       throw new ServerError("Server error. Try again.");
-//     }
-//   }
+  // * Params:
+  // * Res:
+  // function get all messages from 1 conversations
+  public async getChatMessagesFromCache(
+    senderId: string,
+    receiverId: string
+  ): Promise<IMessageData[]> {
+    try {
+      if (!this.client.isOpen) {
+        await this.client.connect();
+      }
+      const userChatList: string[] = await this.client.LRANGE(
+        `chatList:${senderId}`,
+        0,
+        -1
+      );
+      const receiver: string = find(userChatList, (listItem: string) =>
+        listItem.includes(receiverId)
+      ) as string;
+      const parsedReceiver: IChatList = Helpers.parseJson(
+        receiver
+      ) as IChatList;
+      if (parsedReceiver) {
+        const userMessages: string[] = await this.client.LRANGE(
+          `messages:${parsedReceiver.conversationId}`,
+          0,
+          -1
+        );
+        const chatMessages: IMessageData[] = [];
+        for (const item of userMessages) {
+          const chatItem = Helpers.parseJson(item) as IMessageData;
+          chatMessages.push(chatItem);
+        }
+        return chatMessages;
+      } else {
+        return [];
+      }
+    } catch (error) {
+      log.error(error);
+      throw new ServerError("Server error. Try again.");
+    }
+  }
 //   // * Params:
 //   // * Res:
 //   public async markMessageAsDeleted(

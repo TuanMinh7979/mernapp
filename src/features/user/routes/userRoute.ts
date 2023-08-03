@@ -1,4 +1,5 @@
 import { authMiddleware } from "@global/helpers/aurth-middleware";
+import { Update } from "@user/controllers/change-password";
 import { Get } from "@user/controllers/get-profile";
 import { Search } from "@user/controllers/search-user";
 import express, { Router } from "express";
@@ -40,6 +41,11 @@ class UserRoutes {
       "/user/profile/search/:query",
       authMiddleware.checkAuthencation,
       Search.prototype.user
+    );
+    this.router.put(
+      "/user/profile/change-password",
+      authMiddleware.checkAuthencation,
+      Update.prototype.password
     );
 
     return this.router;

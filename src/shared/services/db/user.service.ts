@@ -243,6 +243,16 @@ class UserService {
     ]);
     return users;
   }
+
+  public async updatePassword(
+    username: string,
+    hashedPassword: string
+  ): Promise<void> {
+    await AuthModel.updateOne(
+      { username },
+      { $set: { password: hashedPassword } }
+    ).exec();
+  }
 }
 
 export const userService: UserService = new UserService();

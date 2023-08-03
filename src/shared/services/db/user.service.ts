@@ -1,7 +1,7 @@
 import { IAuthDocument } from "@auth/interfaces/auth.interface";
 import { AuthModel } from "@auth/models/auth.schema";
 import { config } from "@root/config";
-import { IUserDocument } from "@user/interface/user.interface";
+import { ISearchUser, IUserDocument } from "@user/interface/user.interface";
 import { UserModel } from "@user/models/user.schema";
 import Logger from "bunyan";
 import mongoose from "mongoose";
@@ -203,7 +203,7 @@ class UserService {
       `${userId}`
     );
     console.log(followers);
-    
+
     for (const strangeUser of strangeUsers) {
       const followerIndex = followers.indexOf(strangeUser._id.toString());
       if (followerIndex < 0) {
@@ -212,6 +212,36 @@ class UserService {
       }
     }
     return randomUsers;
+  }
+
+  // *Params:
+  // *Res:
+  // function search user by username
+  public async searchUsers(regex: RegExp): Promise<ISearchUser[]> {
+    const users = await AuthModel.aggregate([
+      { $match: { username: regex } },
+      {
+        $lookup: {
+          from: "User",
+          localField: "_id",
+          foreignField: "authId",
+          as: "user",
+        },
+      },
+      {
+        $unwind: "$user",
+      },
+      {
+        $project: {
+          _id: "$user._id",
+          username: 1,
+          email: 1,
+          avatarColor: 1,
+          profilePicture: 1,
+        },
+      },
+    ]);
+    return users;
   }
 }
 

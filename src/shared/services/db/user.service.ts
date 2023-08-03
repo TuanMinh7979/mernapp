@@ -3,6 +3,7 @@ import { AuthModel } from "@auth/models/auth.schema";
 import { config } from "@root/config";
 import {
   IBasicInfo,
+  INotificationSettings,
   ISearchUser,
   ISocialLinks,
   IUserDocument,
@@ -282,6 +283,16 @@ class UserService {
       {
         $set: { social: links },
       }
+    ).exec();
+  }
+
+  public async updateNotificationSettings(
+    userId: string,
+    settings: INotificationSettings
+  ): Promise<void> {
+    await UserModel.updateOne(
+      { _id: userId },
+      { $set: { notifications: settings } }
     ).exec();
   }
 }

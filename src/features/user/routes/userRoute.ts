@@ -3,6 +3,7 @@ import { Update } from "@user/controllers/change-password";
 import { Get } from "@user/controllers/get-profile";
 import { Search } from "@user/controllers/search-user";
 import { Edit } from "@user/controllers/update-basic-info";
+import { UpdateSettings } from "@user/controllers/update-setting";
 import express, { Router } from "express";
 
 class UserRoutes {
@@ -57,6 +58,11 @@ class UserRoutes {
       "/user/profile/social-links",
       authMiddleware.checkAuthencation,
       Edit.prototype.social
+    );
+    this.router.put(
+      "/user/profile/settings",
+      authMiddleware.checkAuthencation,
+      UpdateSettings.prototype.notification
     );
 
     return this.router;

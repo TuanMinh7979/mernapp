@@ -158,6 +158,11 @@ class UserService {
     ]);
     return users;
   }
+
+  public async getTotalUsersInDB(): Promise<number> {
+    const totalCount: number = await UserModel.find({}).countDocuments();
+    return totalCount;
+  }
 }
 
 export const userService: UserService = new UserService();

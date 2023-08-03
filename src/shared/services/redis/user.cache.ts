@@ -8,7 +8,13 @@ import { Helpers } from "@global/helpers/helper";
 import { RedisCommandRawReply } from "@redis/client/dist/lib/commands";
 import { IUserDocument } from "@user/interface/user.interface";
 import { StringMappingType } from "typescript";
-type UserCacheMultiType = string | number | Buffer | RedisCommandRawReply[] | IUserDocument | IUserDocument[];
+type UserCacheMultiType =
+  | string
+  | number
+  | Buffer
+  | RedisCommandRawReply[]
+  | IUserDocument
+  | IUserDocument[];
 const log: Logger = config.createLogger("userCache");
 
 export class UserCache extends BaseCache {
@@ -16,7 +22,7 @@ export class UserCache extends BaseCache {
     super("userCache");
   }
 
-    //   * Params:
+  //   * Params:
   //* key: ObjectId | string; = id of post = key of user sortedSet and users:key Hash Object in redis
   //* userUId:uId(a random number) use for score of user sortedSet
   //   * Res: void: updated post document in cache
@@ -120,40 +126,54 @@ export class UserCache extends BaseCache {
       throw new ServerError("Server error. Try again.");
     }
   }
-//   * Params:
+  //   * Params:
   //* userId
   //   * Res: IUserDocument
-  public async updateSingleUserItemInCache(userId: string, prop: string, value: any): Promise<IUserDocument | null> {
+  public async updateSingleUserItemInCache(
+    userId: string,
+    prop: string,
+    value: any
+  ): Promise<IUserDocument | null> {
     try {
       if (!this.client.isOpen) {
         await this.client.connect();
       }
-      await this.client.HSET(`users:${userId}`, `${prop}`, JSON.stringify(value));
-      const response: IUserDocument = (await this.getUserFromCache(userId)) as IUserDocument;
-      return response
+      await this.client.HSET(
+        `users:${userId}`,
+        `${prop}`,
+        JSON.stringify(value)
+      );
+      const response: IUserDocument = (await this.getUserFromCache(
+        userId
+      )) as IUserDocument;
+      return response;
     } catch (error) {
       log.error(error);
-      throw new ServerError('Server error. Try again.');
+      throw new ServerError("Server error. Try again.");
     }
   }
-
 
   // * Param:
   // * Res
   //  * function get mulitple user
-  public async getUsersFromCache(start: number, end: number, excludedUserKey: string): Promise<IUserDocument[]> {
+  public async getUsersFromCache(
+    start: number,
+    end: number,
+    excludedUserKey: string
+  ): Promise<IUserDocument[]> {
     try {
       if (!this.client.isOpen) {
         await this.client.connect();
       }
-      const response: string[] = await this.client.ZRANGE('user', start, end);
+      const response: string[] = await this.client.ZRANGE("user", start, end);
       const multi: ReturnType<typeof this.client.multi> = this.client.multi();
       for (const key of response) {
         if (key !== excludedUserKey) {
           multi.HGETALL(`users:${key}`);
         }
       }
-      const replies: UserCacheMultiType = (await multi.exec()) as UserCacheMultiType;
+      const replies: UserCacheMultiType =
+        (await multi.exec()) as UserCacheMultiType;
       const userReplies: IUserDocument[] = [];
       for (const reply of replies as IUserDocument[]) {
         reply.createdAt = new Date(Helpers.parseJson(`${reply.createdAt}`));
@@ -177,7 +197,24 @@ export class UserCache extends BaseCache {
       return userReplies;
     } catch (error) {
       log.error(error);
-      throw new ServerError('Server error. Try again.');
+      throw new ServerError("Server error. Try again.");
+    }
+  }
+
+  // *Params:
+  // *Res:
+  // get length of user in cache
+  public async getTotalUsersInCache(): Promise<number> {
+    try {
+      if (!this.client.isOpen) {
+        await this.client.connect();
+      }
+      // use ZCARD to get length
+      const count: number = await this.client.ZCARD("user");
+      return count;
+    } catch (error) {
+      log.error(error);
+      throw new ServerError("Server error. Try again.");
     }
   }
 }

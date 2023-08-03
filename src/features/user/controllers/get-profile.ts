@@ -45,11 +45,12 @@ export class Get {
     let users;
     let type = "";
     //  ! Cache:
-    const cachedUsers: IUserDocument[] = (await userCache.getUsersFromCache(
-      newSkip,
-      limit,
-      userId
-    )) as IUserDocument[];
+    // const cachedUsers: IUserDocument[] = (await userCache.getUsersFromCache(
+    //   newSkip,
+    //   limit,
+    //   userId
+    // )) as IUserDocument[];
+    const cachedUsers: IUserDocument[] = [];
     if (cachedUsers.length) {
       type = "redis";
       users = cachedUsers;
@@ -64,8 +65,10 @@ export class Get {
   //  * Res:IFollowerData
   //   PRIVATE METHOD:
   private async followers(userId: string): Promise<IFollowerData[]> {
-    const cachedFollowers: IFollowerData[] =
-      await followerCache.getFollowersFromCache(`followers:${userId}`);
+    //  ! Cache:
+    // const cachedFollowers: IFollowerData[] =
+    //   await followerCache.getFollowersFromCache(`followers:${userId}`);
+    const cachedFollowers: IFollowerData[] = [];
     const result = cachedFollowers.length
       ? cachedFollowers
       : await followerService.getFollowerData(

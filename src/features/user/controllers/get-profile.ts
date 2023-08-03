@@ -99,4 +99,38 @@ export class Get {
       followers,
     });
   }
+
+  // * Params:
+  // * Res:
+  //    function my profile
+  public async profile(req: Request, res: Response): Promise<void> {
+    // ! Cache:
+    // const cachedUser: IUserDocument = (await userCache.getUserFromCache(
+    //   `${req.currentUser!.userId}`
+    // )) as IUserDocument;
+
+    // const existingUser: IUserDocument = cachedUser   ? cachedUser
+    //   : await userService.getUserById(`${req.currentUser!.userId}`);
+    const existingUser: IUserDocument = await userService.getUserById(
+      `${req.currentUser!.userId}`
+    );
+
+    res
+      .status(HTTP_STATUS.OK)
+      .json({ message: "Get user profile", user: existingUser });
+  }
+
+  // * Params:
+  // * Res:
+  //    function my profile by userId
+  public async profileByUserId(req: Request, res: Response): Promise<void> {
+    const { userId } = req.params;
+    //  ! Cache:
+    // const cachedUser: IUserDocument = (await userCache.getUserFromCache(userId)) as IUserDocument;
+    // const existingUser: IUserDocument = cachedUser ? cachedUser : await userService.getUserById(userId);
+    const existingUser: IUserDocument = await userService.getUserById(userId);
+    res
+      .status(HTTP_STATUS.OK)
+      .json({ message: "Get user profile by id", user: existingUser });
+  }
 }

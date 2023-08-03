@@ -1,7 +1,6 @@
-import { authMiddleware } from '@global/helpers/aurth-middleware';
-import { Get } from '@user/controllers/get-profile';
-import express, { Router } from 'express';
-
+import { authMiddleware } from "@global/helpers/aurth-middleware";
+import { Get } from "@user/controllers/get-profile";
+import express, { Router } from "express";
 
 class UserRoutes {
   private router: Router;
@@ -11,8 +10,21 @@ class UserRoutes {
   }
 
   public routes(): Router {
-    this.router.get('/user/all/:page', authMiddleware.checkAuthencation, Get.prototype.all);
-  
+    this.router.get(
+      "/user/all/:page",
+      authMiddleware.checkAuthencation,
+      Get.prototype.all
+    );
+    this.router.get(
+      "/user/profile",
+      authMiddleware.checkAuthencation,
+      Get.prototype.profile
+    );
+    this.router.get(
+      "/user/profile/:userId",
+      authMiddleware.checkAuthencation,
+      Get.prototype.profileByUserId
+    );
     return this.router;
   }
 }

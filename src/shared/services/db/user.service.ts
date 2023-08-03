@@ -5,7 +5,8 @@ import { IUserDocument } from "@user/interface/user.interface";
 import { UserModel } from "@user/models/user.schema";
 import Logger from "bunyan";
 import mongoose from "mongoose";
-
+import { followerService } from "./follower.service";
+import { indexOf } from "lodash";
 const log: Logger = config.createLogger("UserService");
 class UserService {
   public async addUserData(data: IUserDocument): Promise<void> {
@@ -162,6 +163,53 @@ class UserService {
   public async getTotalUsersInDB(): Promise<number> {
     const totalCount: number = await UserModel.find({}).countDocuments();
     return totalCount;
+  }
+
+  // *Params:
+  // *Res:
+  // get strange user to add friend for current user
+  public async getRandomUsers(userId: string): Promise<IUserDocument[]> {
+    const randomUsers: IUserDocument[] = [];
+    const strangeUsers: IUserDocument[] = await UserModel.aggregate([
+      { $match: { _id: { $ne: new mongoose.Types.ObjectId(userId) } } },
+      {
+        $lookup: {
+          from: "Auth",
+          localField: "authId",
+          foreignField: "_id",
+          as: "authId",
+        },
+      },
+      { $unwind: "$authId" },
+      { $sample: { size: 10 } },
+      {
+        $addFields: {
+          username: "$authId.username",
+          email: "$authId.email",
+          avatarColor: "$authId.avatarColor",
+          uId: "$authId.uId",
+          createdAt: "$authId.createdAt",
+        },
+      },
+      {
+        $project: {
+          authId: 0,
+          __v: 0,
+        },
+      },
+    ]);
+    // get all fan id string
+    const followers: string[] = await followerService.getFolloweesIds(
+      `${userId}`
+    );
+    for (const strangeUser of strangeUsers) {
+      const followerIndex = followers.indexOf(strangeUser._id.toString());
+      if (followerIndex < 0) {
+        // * if(user not is a follower)
+        randomUsers.push(strangeUser);
+      }
+    }
+    return randomUsers;
   }
 }
 

@@ -243,8 +243,8 @@ class FollowerService {
   }
 
   //* Params:
-  //* userId: userId of user to get all fan
-  //* Res: String[] as list of fan ids string
+  //* userId: userId of user to get all idol
+  //* Res: String[] as list of idol ids string
   public async getFolloweesIds(userId: string): Promise<string[]> {
     const followee = await FollowerModel.aggregate([
       { $match: { followerId: new mongoose.Types.ObjectId(userId) } },

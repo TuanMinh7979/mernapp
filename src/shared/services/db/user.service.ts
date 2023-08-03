@@ -167,7 +167,7 @@ class UserService {
 
   // *Params:
   // *Res:
-  // get strange user to add friend for current user
+  // get strange user to add follow for current user(aka a fan)
   public async getRandomUsers(userId: string): Promise<IUserDocument[]> {
     const randomUsers: IUserDocument[] = [];
     const strangeUsers: IUserDocument[] = await UserModel.aggregate([
@@ -202,6 +202,8 @@ class UserService {
     const followers: string[] = await followerService.getFolloweesIds(
       `${userId}`
     );
+    console.log(followers);
+    
     for (const strangeUser of strangeUsers) {
       const followerIndex = followers.indexOf(strangeUser._id.toString());
       if (followerIndex < 0) {

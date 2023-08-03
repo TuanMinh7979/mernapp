@@ -220,7 +220,7 @@ export class UserCache extends BaseCache {
 
   // *Params:
   // *Res:
-  //  get all user that have not follow to current user to add friend
+  //  get all idol that have not been followed by current user , currnet user as a fan 
   public async getRandomUsersFromCache(
     userId: string,
     excludedUsername: string

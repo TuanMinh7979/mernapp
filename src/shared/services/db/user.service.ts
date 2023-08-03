@@ -80,7 +80,7 @@ class UserService {
 
       {
         $project: {
-          _id:"$userId._id",
+          _id: "$userId._id",
           username: 1,
           uId: 1,
           email: 1,
@@ -129,6 +129,34 @@ class UserService {
       bgImageId: 1,
       profilePicture: 1,
     };
+  }
+
+  // *Param:
+  //* userId: userId to remove
+  // *Res:
+  //  function to get all users
+  public async getAllUsers(
+    userId: string,
+    skip: number,
+    limit: number
+  ): Promise<IUserDocument[]> {
+    const users: IUserDocument[] = await UserModel.aggregate([
+      { $match: { _id: { $ne: new mongoose.Types.ObjectId(userId) } } },
+      { $skip: skip },
+      { $limit: limit },
+      { $sort: { createdAt: -1 } },
+      {
+        $lookup: {
+          from: "Auth",
+          localField: "authId",
+          foreignField: "_id",
+          as: "authId",
+        },
+      },
+      { $unwind: "$authId" },
+      { $project: this.aggregateProject() },
+    ]);
+    return users;
   }
 }
 

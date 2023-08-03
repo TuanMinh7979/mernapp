@@ -130,7 +130,7 @@ export class UserCache extends BaseCache {
       }
       await this.client.HSET(`users:${userId}`, `${prop}`, JSON.stringify(value));
       const response: IUserDocument = (await this.getUserFromCache(userId)) as IUserDocument;
-      return response;
+      return response
     } catch (error) {
       log.error(error);
       throw new ServerError('Server error. Try again.');

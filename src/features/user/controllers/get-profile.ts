@@ -11,6 +11,7 @@ import { IPostDocument } from "@post/interfaces/post.interface";
 import { postService } from "@service/db/post.service";
 import { IFollowerData } from "@root/features/follower/interfaces/follower.interface";
 import { IAllUsers, IUserDocument } from "@user/interface/user.interface";
+import { Helpers } from "@global/helpers/helper";
 
 const PAGE_SIZE = 12;
 
@@ -22,6 +23,7 @@ interface IUserAll {
 }
 const userCache: UserCache = new UserCache();
 const followerCache: FollowerCache = new FollowerCache();
+const postCache: PostCache = new PostCache();
 export class Get {
   //  * Params:
   //  * Res:number
@@ -132,5 +134,37 @@ export class Get {
     res
       .status(HTTP_STATUS.OK)
       .json({ message: "Get user profile by id", user: existingUser });
+  }
+
+  // * Params:
+  // * Res:
+  public async profileAndPosts(req: Request, res: Response): Promise<void> {
+    const { userId, username, uId } = req.params;
+    const userName: string = Helpers.firstLetterUppercase(username);
+    const cachedUser: IUserDocument = (await userCache.getUserFromCache(
+      userId
+    )) as IUserDocument;
+    // //!  Cache:
+    // const cachedUserPosts: IPostDocument[] =
+    //   await postCache.getUserPostsFromCache("post", parseInt(uId, 10));
+
+    // const existingUser: IUserDocument = cachedUser? cachedUser:
+    const existingUser: IUserDocument = await userService.getUserById(userId);
+    //!  Cache:
+    // const userPosts: IPostDocument[] = cachedUserPosts.length? cachedUserPosts:
+    const userPosts: IPostDocument[] = await postService.getPosts(
+      { username: userName },
+      0,
+      100,
+      {
+        createdAt: -1,
+      }
+    );
+
+    res.status(HTTP_STATUS.OK).json({
+      message: "Get user profile and posts",
+      user: existingUser,
+      posts: userPosts,
+    });
   }
 }

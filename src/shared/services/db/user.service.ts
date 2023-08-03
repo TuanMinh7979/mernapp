@@ -1,7 +1,12 @@
 import { IAuthDocument } from "@auth/interfaces/auth.interface";
 import { AuthModel } from "@auth/models/auth.schema";
 import { config } from "@root/config";
-import { ISearchUser, IUserDocument } from "@user/interface/user.interface";
+import {
+  IBasicInfo,
+  ISearchUser,
+  ISocialLinks,
+  IUserDocument,
+} from "@user/interface/user.interface";
 import { UserModel } from "@user/models/user.schema";
 import Logger from "bunyan";
 import mongoose from "mongoose";
@@ -251,6 +256,32 @@ class UserService {
     await AuthModel.updateOne(
       { username },
       { $set: { password: hashedPassword } }
+    ).exec();
+  }
+
+  public async updateUserInfo(userId: string, info: IBasicInfo): Promise<void> {
+    await UserModel.updateOne(
+      { _id: userId },
+      {
+        $set: {
+          work: info["work"],
+          school: info["school"],
+          quote: info["quote"],
+          location: info["location"],
+        },
+      }
+    ).exec();
+  }
+
+  public async updateSocialLinks(
+    userId: string,
+    links: ISocialLinks
+  ): Promise<void> {
+    await UserModel.updateOne(
+      { _id: userId },
+      {
+        $set: { social: links },
+      }
     ).exec();
   }
 }

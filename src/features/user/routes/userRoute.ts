@@ -2,6 +2,7 @@ import { authMiddleware } from "@global/helpers/aurth-middleware";
 import { Update } from "@user/controllers/change-password";
 import { Get } from "@user/controllers/get-profile";
 import { Search } from "@user/controllers/search-user";
+import { Edit } from "@user/controllers/update-basic-info";
 import express, { Router } from "express";
 
 class UserRoutes {
@@ -46,6 +47,16 @@ class UserRoutes {
       "/user/profile/change-password",
       authMiddleware.checkAuthencation,
       Update.prototype.password
+    );
+    this.router.put(
+      "/user/profile/basic-info",
+      authMiddleware.checkAuthencation,
+      Edit.prototype.info
+    );
+    this.router.put(
+      "/user/profile/social-links",
+      authMiddleware.checkAuthencation,
+      Edit.prototype.social
     );
 
     return this.router;

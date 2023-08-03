@@ -8,7 +8,13 @@ import { Helpers } from "@global/helpers/helper";
 import { RedisCommandRawReply } from "@redis/client/dist/lib/commands";
 import { IUserDocument } from "@user/interface/user.interface";
 import { StringMappingType } from "typescript";
-
+type UserCacheMultiType =
+  | string
+  | number
+  | Buffer
+  | RedisCommandRawReply[]
+  | IUserDocument
+  | IUserDocument[];
 const log: Logger = config.createLogger("userCache");
 
 export class UserCache extends BaseCache {
@@ -16,7 +22,7 @@ export class UserCache extends BaseCache {
     super("userCache");
   }
 
-    //   * Params:
+  //   * Params:
   //* key: ObjectId | string; = id of post = key of user sortedSet and users:key Hash Object in redis
   //* userUId:uId(a random number) use for score of user sortedSet
   //   * Res: void: updated post document in cache
@@ -106,13 +112,13 @@ export class UserCache extends BaseCache {
       response.social = Helpers.parseJson(`${response.social}`);
       response.followersCount = Helpers.parseJson(`${response.followersCount}`);
       response.followingCount = Helpers.parseJson(`${response.followingCount}`);
-      // response.bgImageId = Helpers.parseJson(`${response.bgImageId}`);
-      // response.bgImageVersion = Helpers.parseJson(`${response.bgImageVersion}`);
-      // response.profilePicture = Helpers.parseJson(`${response.profilePicture}`);
-      // response.work = Helpers.parseJson(`${response.work}`);
-      // response.school = Helpers.parseJson(`${response.school}`);
-      // response.location = Helpers.parseJson(`${response.location}`);
-      // response.quote = Helpers.parseJson(`${response.quote}`);
+      response.bgImageId = Helpers.parseJson(`${response.bgImageId}`);
+      response.bgImageVersion = Helpers.parseJson(`${response.bgImageVersion}`);
+      response.profilePicture = Helpers.parseJson(`${response.profilePicture}`);
+      response.work = Helpers.parseJson(`${response.work}`);
+      response.school = Helpers.parseJson(`${response.school}`);
+      response.location = Helpers.parseJson(`${response.location}`);
+      response.quote = Helpers.parseJson(`${response.quote}`);
 
       return response;
     } catch (error) {
@@ -120,20 +126,153 @@ export class UserCache extends BaseCache {
       throw new ServerError("Server error. Try again.");
     }
   }
-//   * Params:
+  //   * Params:
   //* userId
   //   * Res: IUserDocument
-  public async updateSingleUserItemInCache(userId: string, prop: string, value: any): Promise<IUserDocument | null> {
+  public async updateSingleUserItemInCache(
+    userId: string,
+    prop: string,
+    value: any
+  ): Promise<IUserDocument | null> {
     try {
       if (!this.client.isOpen) {
         await this.client.connect();
       }
-      await this.client.HSET(`users:${userId}`, `${prop}`, JSON.stringify(value));
-      const response: IUserDocument = (await this.getUserFromCache(userId)) as IUserDocument;
+      await this.client.HSET(
+        `users:${userId}`,
+        `${prop}`,
+        JSON.stringify(value)
+      );
+      const response: IUserDocument = (await this.getUserFromCache(
+        userId
+      )) as IUserDocument;
       return response;
     } catch (error) {
       log.error(error);
-      throw new ServerError('Server error. Try again.');
+      throw new ServerError("Server error. Try again.");
+    }
+  }
+
+  // * Param:
+  // * Res
+  //  * function get mulitple user
+  public async getUsersFromCache(
+    start: number,
+    end: number,
+    excludedUserKey: string
+  ): Promise<IUserDocument[]> {
+    try {
+      if (!this.client.isOpen) {
+        await this.client.connect();
+      }
+      const response: string[] = await this.client.ZRANGE("user", start, end);
+      const multi: ReturnType<typeof this.client.multi> = this.client.multi();
+      for (const key of response) {
+        if (key !== excludedUserKey) {
+          multi.HGETALL(`users:${key}`);
+        }
+      }
+      const replies: UserCacheMultiType =
+        (await multi.exec()) as UserCacheMultiType;
+      const userReplies: IUserDocument[] = [];
+      for (const reply of replies as IUserDocument[]) {
+        reply.createdAt = new Date(Helpers.parseJson(`${reply.createdAt}`));
+        reply.postsCount = Helpers.parseJson(`${reply.postsCount}`);
+        reply.blocked = Helpers.parseJson(`${reply.blocked}`);
+        reply.blockedBy = Helpers.parseJson(`${reply.blockedBy}`);
+        reply.notifications = Helpers.parseJson(`${reply.notifications}`);
+        reply.social = Helpers.parseJson(`${reply.social}`);
+        reply.followersCount = Helpers.parseJson(`${reply.followersCount}`);
+        reply.followingCount = Helpers.parseJson(`${reply.followingCount}`);
+        reply.bgImageId = Helpers.parseJson(`${reply.bgImageId}`);
+        reply.bgImageVersion = Helpers.parseJson(`${reply.bgImageVersion}`);
+        reply.profilePicture = Helpers.parseJson(`${reply.profilePicture}`);
+        reply.work = Helpers.parseJson(`${reply.work}`);
+        reply.school = Helpers.parseJson(`${reply.school}`);
+        reply.location = Helpers.parseJson(`${reply.location}`);
+        reply.quote = Helpers.parseJson(`${reply.quote}`);
+
+        userReplies.push(reply);
+      }
+      return userReplies;
+    } catch (error) {
+      log.error(error);
+      throw new ServerError("Server error. Try again.");
+    }
+  }
+
+  // *Params:
+  // *Res:
+  // get length of user in cache
+  public async getTotalUsersInCache(): Promise<number> {
+    try {
+      if (!this.client.isOpen) {
+        await this.client.connect();
+      }
+      // use ZCARD to get length
+      const count: number = await this.client.ZCARD("user");
+      return count;
+    } catch (error) {
+      log.error(error);
+      throw new ServerError("Server error. Try again.");
+    }
+  }
+
+  // *Params:
+  // *Res:
+  //  get all idol that have not been followed by current user , currnet user as a fan 
+  public async getRandomUsersFromCache(
+    userId: string,
+    excludedUsername: string
+  ): Promise<IUserDocument[]> {
+    try {
+      if (!this.client.isOpen) {
+        await this.client.connect();
+      }
+      const suggestUserToAddFriend: IUserDocument[] = [];
+      const followers: string[] = await this.client.LRANGE(
+        `following:${userId}`,
+        0,
+        -1
+      );
+      const users: string[] = await this.client.ZRANGE("user", 0, -1);
+      const randomUsers: string[] = Helpers.shuffle(users).slice(0, 10);
+      for (const key of randomUsers) {
+        const followerIndex = indexOf(followers, key);
+        // find user not follow to login user
+        if (followerIndex < 0) {
+          const userHash: IUserDocument = (await this.client.HGETALL(
+            `users:${key}`
+          )) as unknown as IUserDocument;
+          suggestUserToAddFriend.push(userHash);
+        }
+      }
+      const excludedUsernameIndex: number = findIndex(suggestUserToAddFriend, [
+        "username",
+        excludedUsername,
+      ]);
+      suggestUserToAddFriend.splice(excludedUsernameIndex, 1);
+      for (const reply of suggestUserToAddFriend) {
+        reply.createdAt = new Date(Helpers.parseJson(`${reply.createdAt}`));
+        reply.postsCount = Helpers.parseJson(`${reply.postsCount}`);
+        reply.blocked = Helpers.parseJson(`${reply.blocked}`);
+        reply.blockedBy = Helpers.parseJson(`${reply.blockedBy}`);
+        reply.notifications = Helpers.parseJson(`${reply.notifications}`);
+        reply.social = Helpers.parseJson(`${reply.social}`);
+        reply.followersCount = Helpers.parseJson(`${reply.followersCount}`);
+        reply.followingCount = Helpers.parseJson(`${reply.followingCount}`);
+        reply.bgImageId = Helpers.parseJson(`${reply.bgImageId}`);
+        reply.bgImageVersion = Helpers.parseJson(`${reply.bgImageVersion}`);
+        reply.profilePicture = Helpers.parseJson(`${reply.profilePicture}`);
+        reply.work = Helpers.parseJson(`${reply.work}`);
+        reply.school = Helpers.parseJson(`${reply.school}`);
+        reply.location = Helpers.parseJson(`${reply.location}`);
+        reply.quote = Helpers.parseJson(`${reply.quote}`);
+      }
+      return suggestUserToAddFriend;
+    } catch (error) {
+      log.error(error);
+      throw new ServerError("Server error. Try again.");
     }
   }
 }

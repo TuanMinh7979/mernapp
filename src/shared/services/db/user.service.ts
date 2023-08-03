@@ -1,11 +1,18 @@
 import { IAuthDocument } from "@auth/interfaces/auth.interface";
 import { AuthModel } from "@auth/models/auth.schema";
 import { config } from "@root/config";
-import { IUserDocument } from "@user/interface/user.interface";
+import {
+  IBasicInfo,
+  INotificationSettings,
+  ISearchUser,
+  ISocialLinks,
+  IUserDocument,
+} from "@user/interface/user.interface";
 import { UserModel } from "@user/models/user.schema";
 import Logger from "bunyan";
 import mongoose from "mongoose";
-
+import { followerService } from "./follower.service";
+import { indexOf } from "lodash";
 const log: Logger = config.createLogger("UserService");
 class UserService {
   public async addUserData(data: IUserDocument): Promise<void> {
@@ -80,7 +87,7 @@ class UserService {
 
       {
         $project: {
-          _id:"$userId._id",
+          _id: "$userId._id",
           username: 1,
           uId: 1,
           email: 1,
@@ -129,6 +136,164 @@ class UserService {
       bgImageId: 1,
       profilePicture: 1,
     };
+  }
+
+  // *Param:
+  //* userId: userId to remove
+  // *Res:
+  //  function to get all users
+  public async getAllUsers(
+    userId: string,
+    skip: number,
+    limit: number
+  ): Promise<IUserDocument[]> {
+    const users: IUserDocument[] = await UserModel.aggregate([
+      { $match: { _id: { $ne: new mongoose.Types.ObjectId(userId) } } },
+      { $skip: skip },
+      { $limit: limit },
+      { $sort: { createdAt: -1 } },
+      {
+        $lookup: {
+          from: "Auth",
+          localField: "authId",
+          foreignField: "_id",
+          as: "authId",
+        },
+      },
+      { $unwind: "$authId" },
+      { $project: this.aggregateProject() },
+    ]);
+    return users;
+  }
+
+  public async getTotalUsersInDB(): Promise<number> {
+    const totalCount: number = await UserModel.find({}).countDocuments();
+    return totalCount;
+  }
+
+  // *Params:
+  // *Res:
+  // get strange user to add follow for current user(aka a fan)
+  public async getRandomUsers(userId: string): Promise<IUserDocument[]> {
+    const randomUsers: IUserDocument[] = [];
+    const strangeUsers: IUserDocument[] = await UserModel.aggregate([
+      { $match: { _id: { $ne: new mongoose.Types.ObjectId(userId) } } },
+      {
+        $lookup: {
+          from: "Auth",
+          localField: "authId",
+          foreignField: "_id",
+          as: "authId",
+        },
+      },
+      { $unwind: "$authId" },
+      { $sample: { size: 10 } },
+      {
+        $addFields: {
+          username: "$authId.username",
+          email: "$authId.email",
+          avatarColor: "$authId.avatarColor",
+          uId: "$authId.uId",
+          createdAt: "$authId.createdAt",
+        },
+      },
+      {
+        $project: {
+          authId: 0,
+          __v: 0,
+        },
+      },
+    ]);
+    // get all fan id string
+    const followers: string[] = await followerService.getFolloweesIds(
+      `${userId}`
+    );
+    console.log(followers);
+
+    for (const strangeUser of strangeUsers) {
+      const followerIndex = followers.indexOf(strangeUser._id.toString());
+      if (followerIndex < 0) {
+        // * if(user not is a follower)
+        randomUsers.push(strangeUser);
+      }
+    }
+    return randomUsers;
+  }
+
+  // *Params:
+  // *Res:
+  // function search user by username
+  public async searchUsers(regex: RegExp): Promise<ISearchUser[]> {
+    const users = await AuthModel.aggregate([
+      { $match: { username: regex } },
+      {
+        $lookup: {
+          from: "User",
+          localField: "_id",
+          foreignField: "authId",
+          as: "user",
+        },
+      },
+      {
+        $unwind: "$user",
+      },
+      {
+        $project: {
+          _id: "$user._id",
+          username: 1,
+          email: 1,
+          avatarColor: 1,
+          profilePicture: 1,
+        },
+      },
+    ]);
+    return users;
+  }
+
+  public async updatePassword(
+    username: string,
+    hashedPassword: string
+  ): Promise<void> {
+    await AuthModel.updateOne(
+      { username },
+      { $set: { password: hashedPassword } }
+    ).exec();
+  }
+
+  public async updateUserInfo(userId: string, info: IBasicInfo): Promise<void> {
+    await UserModel.updateOne(
+      { _id: userId },
+      {
+        $set: {
+          work: info["work"],
+          school: info["school"],
+          quote: info["quote"],
+          location: info["location"],
+        },
+      }
+    ).exec();
+  }
+
+  public async updateSocialLinks(
+    userId: string,
+    links: ISocialLinks
+  ): Promise<void> {
+    await UserModel.updateOne(
+      { _id: userId },
+      {
+        $set: { social: links },
+      }
+    ).exec();
+  }
+
+  public async updateNotificationSettings(
+    userId: string,
+    settings: INotificationSettings
+  ): Promise<void> {
+    await UserModel.updateOne(
+      { _id: userId },
+      { $set: { notifications: settings } }
+    ).exec();
   }
 }
 

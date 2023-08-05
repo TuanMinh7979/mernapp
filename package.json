@@ -7,7 +7,8 @@
     "start": "nodemon ./build/src/app.js",
     "dev": "nodemon -r tsconfig-paths/register src/app.ts | bunyan",
     "test": "jest --coverage=true -w=1 --forceExit --detectOpenHandles --watchAll=false",
-    "build": "ttsc -p ."
+    "build": "ttsc -p .", 
+  "seeds:dev":"npx ts-node src/seeds.ts"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +16,7 @@
   "dependencies": {
     "@bull-board/api": "^5.6.0",
     "@bull-board/express": "^5.6.0",
+    "@faker-js/faker": "^8.0.2",
     "@jest/types": "^29.5.0",
     "@sendgrid/mail": "^7.7.0",
     "@socket.io/redis-adapter": "^8.1.0",
@@ -25,6 +27,7 @@
     "bcryptjs": "^2.4.3",
     "bull": "^4.10.4",
     "bunyan": "^1.8.15",
+    "canvas": "^2.11.2",
     "cloudinary": "^1.37.0",
     "compression": "^1.7.4",
     "cookie-session": "^2.0.0",

@@ -31,10 +31,14 @@ export class SignUp {
   @joiValidation(signupSchema)
   public async create(req: Request, res: Response): Promise<void> {
     const { username, email, password, avatarColor, avatarImage } = req.body;
+    console.log("INPUT",  username, email);
+    
     const checkIfUserExists: IAuthDocument =
       await authService.getAuthByUsernameOrEmail(username, email); //
+      console.log(checkIfUserExists);
+      
     if (checkIfUserExists) {
-      throw new BadRequestError("Invalid credentials");
+      throw new BadRequestError("Invalid credentials ");
     }
     const authObjectId: ObjectId = new ObjectId();
     const userObjectId: ObjectId = new ObjectId();
@@ -47,6 +51,8 @@ export class SignUp {
       password,
       avatarColor,
     });
+    console.log("--------------HERE");
+    
     const result: UploadApiResponse = (await upload(
       avatarImage,
       `${userObjectId}/upload`,
@@ -56,6 +62,7 @@ export class SignUp {
     if (!result?.public_id) {
       throw new BadRequestError("File upload: Invalid credentials");
     }
+    console.log("--------------HERE1");
      // ! Cache: user data for cache
     const userDataForCache: IUserDocument = SignUp.prototype.createUserData(
       authData,
@@ -76,7 +83,7 @@ export class SignUp {
     ]);
     // ! Queue: 
     authQueue.addAuthUserJob("addAuthUserToDb", { value: authData });
-    userQueue.addUserToDbJob("addUserToDb", { value: userDataForCache });
+    userQueue.addUserToDbJob("addUserToDB", { value: userDataForCache });
 
     const userJwt = SignUp.prototype.signupToken(authData, userObjectId);
     req.session = {

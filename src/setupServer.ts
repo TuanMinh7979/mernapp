@@ -101,6 +101,7 @@ export class ChatappServer {
   }
 
   private async startServer(app: Application): Promise<void> {
+ 
     try {
       const httpServer = new http.Server(app);
       const socketIO: Server = await this.createSocketIO(httpServer);

@@ -5,11 +5,9 @@ import { PostCache } from "@service/redis/post.cache";
 import { postService } from "@service/db/post.service";
 import { ServerError } from "@global/helpers/error-handler";
 const postCache: PostCache = new PostCache();
-const PAGE_SIZE = 2;
+const PAGE_SIZE = 3;
 export class Get {
-  userFollowing(arg0: string, checkAuthencation: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, _res: Response<any, Record<string, any>>, next: import("express").NextFunction) => void, userFollowing: any) {
-      throw new Error('Method not implemented.');
-  }
+
   // * Params:
   // * Res: void
   public async posts(req: Request, res: Response): Promise<void> {
@@ -23,19 +21,20 @@ export class Get {
       // start index as newSkip and limit as end index
       // first get in redis
       // ! Cache:
-      const cachedPosts: IPostDocument[] = await postCache.getPostsFromCache(
-        "post",
-        newSkip,
-        limit - 1
-      );
-      if (cachedPosts.length) {
-        posts = cachedPosts;
-        totalPosts = await postCache.getTotalPostsInCache();
-      } else {
+      // const cachedPosts: IPostDocument[] = await postCache.getPostsFromCache(
+      //   "post",
+      //   newSkip,
+      //   limit - 1
+      // );
+      // if (cachedPosts.length) {
+      //   posts = cachedPosts;
+      //   totalPosts = await postCache.getTotalPostsInCache();
+      // } else {
         // if no cached posts, then get from database
+        //  ! Service : 
         posts = await postService.getPosts({}, skip, limit, { createdAt: -1 });
         totalPosts = await postService.postsCount();
-      }
+      // }
       res
         .status(HTTP_STATUS.OK)
         .json({ message: "All posts", posts, totalPosts });

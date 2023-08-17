@@ -10,7 +10,7 @@ import {
   IReactionJob,
 } from "../interfaces/reaction.interface";
 import { reactionQueue } from "@service/queue/reaction.queue";
-
+import { reactionService } from "@service/db/reaction.service";
 const reactionCache: ReactionCache = new ReactionCache();
 
 export class Add {
@@ -36,13 +36,13 @@ export class Add {
       profilePicture,
     } as IReactionDocument;
     // ! Cache:
-    await reactionCache.savePostReactionToCache(
-      postId,
-      reactionObject,
-      postReactions,
-      type,
-      previousReaction
-    );
+    // await reactionCache.savePostReactionToCache(
+    //   postId,
+    //   reactionObject,
+    //   postReactions,
+    //   type,
+    //   previousReaction
+    // );
     const databaseReactionData: IReactionJob = {
       postId,
       userTo: userTo,
@@ -53,7 +53,10 @@ export class Add {
       reactionObject,
     };
     // ! Queue:
-    reactionQueue.addReactionJob("addReactionToDB", databaseReactionData);
+    // reactionQueue.addReactionJob("addReactionToDB", databaseReactionData);
+
+    //  ! Service:
+    await reactionService.addReactionDataToDB(databaseReactionData);
     res.status(HTTP_STATUS.OK).json({ message: "Reaction added successfully" });
   }
 }

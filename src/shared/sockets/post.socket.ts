@@ -12,6 +12,8 @@ export class SocketIOPostHandler {
   public listen(): void {
     this.io.on("connection", (socket: Socket) => {
       socket.on("reaction", (reaction: IReactionDocument) => {
+        console.log("-------------", reaction);
+        
         this.io.emit('update reaction', reaction)
       });
       socket.on("comment", (reaction: IReactionDocument) => {

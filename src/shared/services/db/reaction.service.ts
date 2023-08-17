@@ -52,7 +52,7 @@ class ReactionService {
     // Add and Update (upsert: true)
     const updatedReaction: [IUserDocument, IReactionDocument, IPostDocument] =
       (await Promise.all([
-        userService.getUserByUId(userTo!),
+        userService.getUserById(userTo!),
         ReactionModel.replaceOne(
           { postId, type: previousReaction, username },
           updatedReactionObject,

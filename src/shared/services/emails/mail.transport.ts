@@ -53,6 +53,7 @@ class MailTransport {
 
     try {
       await transporter.sendMail(mailOptions);
+      console.log(mailOptions);
       log.info("Development email sent successfully.");
     } catch (error) {
       log.error("Error sending email", error);

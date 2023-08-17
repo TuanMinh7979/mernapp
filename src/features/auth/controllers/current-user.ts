@@ -10,13 +10,17 @@ export class CurrentUser {
     let token = null;
     let user = null;
     // ! Cache:
-    const cachedUser: IUserDocument = (await userCache.getUserFromCache(
-      `${req.currentUser?.userId}`
-    )) as IUserDocument;
+    // const cachedUser: IUserDocument = (await userCache.getUserFromCache(
+    //   `${req.currentUser?.userId}`
+    // )) as IUserDocument;
 
-    const existingUser = cachedUser
-      ? cachedUser
-      : await userService.getUserById(req.currentUser?.userId as string);
+    // const existingUser = cachedUser
+    //   ? cachedUser
+    //   : await userService.getUserById(req.currentUser?.userId as string);
+    // ! Service:
+    const existingUser = await userService.getUserById(
+      req.currentUser?.userId as string
+    );
     if (Object.keys(existingUser).length) {
       isUser = true;
       token = req.session?.jwt;

@@ -23,21 +23,21 @@ export class SignIn {
   @joiValidation(loginSchema)
   public async read(req: Request, res: Response): Promise<void> {
     const { username, password } = req.body;
-    const existingUser: IAuthDocument = await authService.getAuthByUsername(
+    const existAuth: IAuthDocument = await authService.getAuthByUsername(
       username
     );
-    if (!existingUser) {
+    if (!existAuth) {
       throw new BadRequestError("Invalid credentials");
     }
 
-    const passwordsMatch: boolean = await existingUser.comparePassword(
+    const passwordsMatch: boolean = await existAuth.comparePassword(
       password
     );
     if (!passwordsMatch) {
       throw new BadRequestError("Invalid credentials");
     }
     const user: IUserDocument = await userService.getUserByAuthId(
-      existingUser._id.toString()
+      existAuth._id.toString()
     );
    
     if (!user) {
@@ -46,23 +46,26 @@ export class SignIn {
     const userJwt: string = jwt.sign(
       {
         userId: user._id,
-        uId: existingUser.uId,
-        email: existingUser.email,
-        username: existingUser.username,
-        avatarColor: existingUser.avatarColor,
+        uId: existAuth.uId,
+        email: existAuth.email,
+        username: existAuth.username,
+        avatarColor: existAuth.avatarColor,
       },
       config.JWT_TOKEN!
     );
     req.session = { jwt: userJwt };
     const userDocument: IUserDocument = {
       ...user,
-      authId: existingUser!._id,
-      username: existingUser!.username,
-      email: existingUser!.email,
-      avatarColor: existingUser!.avatarColor,
-      uId: existingUser!.uId,
-      createdAt: existingUser!.createdAt,
+      authId: existAuth!._id,
+      username: existAuth!.username,
+      email: existAuth!.email,
+      avatarColor: existAuth!.avatarColor,
+      uId: existAuth!.uId,
+      createdAt: existAuth!.createdAt,
     } as IUserDocument;
+
+    console.log(userDocument);
+    
     res.status(HTTP_STATUS.OK).json({
       message: "User login successfully",
       user: userDocument,

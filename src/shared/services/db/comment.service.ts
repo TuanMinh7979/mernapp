@@ -37,9 +37,9 @@ class CommentService {
       { new: true }
     );
 
-    //! Cache:
+    // ! Cache:
     // const user = userCache.getUserFromCache(userTo);
-    const targetUser = userService.getUserByUId(userTo);
+    const targetUser = userService.getUserById(userTo);
 
     const response = await Promise.all([comments, post, targetUser]);
     // ! CMN NOTI:
@@ -68,21 +68,21 @@ class CommentService {
       });
       //send to emailQueue
       //  ! Email:
-      const templateParams: INotificationTemplate = {
-        username: response[2].username!, // email of poster
-        message: `${username} commented on your post`,
-        header: "Notification of new comment",
-      };
+      // const templateParams: INotificationTemplate = {
+      //   username: response[2].username!, // email of poster
+      //   message: `${username} commented on your post`,
+      //   header: "Notification of new comment",
+      // };
 
-      const template: string =
-        notificationTemplate.notificationMessageTemplate(templateParams);
-      // ! Queue:
+      // const template: string =
+      //   notificationTemplate.notificationMessageTemplate(templateParams);
+ 
 
-      emailQueue.addEmailJob("commentNotiEmail", {
-        receiverEmail: response[2].email!,
-        template,
-        subject: "Comment Notification ",
-      });
+      // emailQueue.addEmailJob("commentNotiEmail", {
+      //   receiverEmail: response[2].email!,
+      //   template,
+      //   subject: "Comment Notification ",
+      // });
     }
   }
   // * Params:

@@ -1,3 +1,4 @@
+import { reactionService } from './../../../shared/services/db/reaction.service';
 import { Request, Response } from 'express';
 import HTTP_STATUS from 'http-status-codes';
 
@@ -23,7 +24,10 @@ export class Remove {
       previousReaction
     };
     // ! Queue:
-    reactionQueue.addReactionJob('removeReactionFromDB', databaseReactionData);
+    // reactionQueue.addReactionJob('removeReactionFromDB', databaseReactionData);
+
+    // ! Service: 
+    await reactionService.removeReactionDataFromDB(databaseReactionData);
     res.status(HTTP_STATUS.OK).json({ message: 'Reaction removed from post' });
   }
 }

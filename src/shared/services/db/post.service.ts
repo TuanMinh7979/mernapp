@@ -80,14 +80,14 @@ class PostService {
   //   * Res:void
   public async editPost(
     postId: string,
-    updatedPost: IPostDocument[]
-  ): Promise<void> {
-    const updatePost: UpdateQuery<IPostDocument> = PostModel.updateOne(
+    updatedPost: IPostDocument
+  ): Promise<IPostDocument> {
+    const updatePost = await PostModel.findOneAndUpdate(
       { _id: postId.trim() },
-      { $set: updatedPost }
+      { $set: updatedPost },
+      { new: true }
     );
-    await updatePost.exec();
-    // await Promise.all([updatePost]);
+    return updatePost as unknown as IPostDocument;
   }
 }
 

@@ -10,7 +10,8 @@ import { UploadApiErrorResponse, UploadApiResponse } from "cloudinary";
 import { upload } from "@global/helpers/cloudinary-upload";
 import { BadRequestError } from "@global/helpers/error-handler";
 import { imageQueue } from "@service/queue/image.queue";
-
+import { postService } from "@service/db/post.service";
+import { imageService } from "@service/db/image.service";
 const postCache: PostCache = new PostCache();
 
 export class Update {
@@ -46,18 +47,21 @@ export class Update {
       postId,
       updatedPost
     );
-    // ! Socket:
-    socketIOPostObject.emit("update post", postUpdated, "posts");
+
     // ! Queue:
-    console.log("----------DATA",updatedPost);
-    
-    postQueue.addPostJob("updatePostInDB", { key: postId, value: updatedPost });
+    postQueue.addPostJob("updatePostInDB", { key: postId, value: postUpdated });
+
+    //  ! Service:
+    // const rs = await postService.editPost(postId, updatedPost);
+    // ! Socket:
+
+    socketIOPostObject.emit("update post", postUpdated, "posts");
     res.status(HTTP_STATUS.OK).json({ message: "Post updated successfully" });
   }
 
   // * Params:
   // * Res: void
-    // * Post with new image
+  // * Post with new image
   @joiValidation(postWithImageSchema)
   public async postWithImage(req: Request, res: Response): Promise<void> {
     const { imgId, imgVersion } = req.body;
@@ -107,11 +111,13 @@ export class Update {
       postId,
       updatedPost
     );
-    // ! Socket:
-    socketIOPostObject.emit("update post", postUpdated, "posts");
+
     // ! Queue:
     postQueue.addPostJob("updatePostInDB", { key: postId, value: postUpdated });
-   
+    //  ! Service:
+    // const rs = await postService.editPost(postId, updatedPost);
+    // ! Socket:
+    socketIOPostObject.emit("update post", postUpdated, "posts");
   }
   // * Params:
   // * Res: void
@@ -124,7 +130,7 @@ export class Update {
       feelings,
       privacy,
       gifUrl,
-      profilePicture, 
+      profilePicture,
       image,
       video,
     } = req.body;
@@ -153,15 +159,29 @@ export class Update {
       postId,
       updatedPost
     );
-    // ! Socket:
-    socketIOPostObject.emit("update post", postUpdated, "posts");
+
     // ! Queue:
     postQueue.addPostJob("updatePostInDB", { key: postId, value: postUpdated });
+
+    //  ! Service:
+    // const rs = await postService.editPost(postId, updatedPost);
+    // ! Socket:
+    socketIOPostObject.emit("update post", postUpdated, "posts");
+
+    //  ! Queue:
     imageQueue.addImageJob("addImageToDB", {
       key: `${req.currentUser!.userId}`,
       imgId: result.public_id,
       imgVersion: result.version.toString(),
     });
+
+    // ! Service:
+    // await imageService.addImage(
+    //   req.currentUser!.userId,
+    //   result.public_id,
+    //   result.version.toString(),
+    //   ""
+    // );
     return result;
   }
 }

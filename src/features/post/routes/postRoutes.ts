@@ -45,11 +45,7 @@ class PostRoutes {
       authMiddleware.checkAuthencation,
       Update.prototype.posts
     );
-    this.router.put(
-      "/post/:postId",
-      authMiddleware.checkAuthencation,
-      Update.prototype.posts
-    );
+
     this.router.put(
       "/post/image/:postId",
       authMiddleware.checkAuthencation,

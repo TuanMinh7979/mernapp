@@ -286,18 +286,18 @@ export class PostCache extends BaseCache {
       const resultArrayOfAllHGetAll: PostCacheMultiType =
         (await multi.exec()) as PostCacheMultiType;
 
-      const postReply = resultArrayOfAllHGetAll as IPostDocument;
-      postReply.commentsCount = Helpers.parseJson(
-        `${postReply.commentsCount}`
+      const postReply = resultArrayOfAllHGetAll as IPostDocument[];
+      postReply[0].commentsCount = Helpers.parseJson(
+        `${postReply[0].commentsCount}`
       ) as number;
-      postReply.reactions = Helpers.parseJson(
-        `${postReply.reactions}`
+      postReply[0].reactions = Helpers.parseJson(
+        `${postReply[0].reactions}`
       ) as IReactions;
-      postReply.createdAt = new Date(
-        Helpers.parseJson(`${postReply.createdAt}`)
+      postReply[0].createdAt = new Date(
+        Helpers.parseJson(`${postReply[0].createdAt}`)
       ) as Date;
 
-      return postReply;
+      return postReply[0];
     } catch (error) {
       log.error(error);
       throw new ServerError("Server error. Try again.");

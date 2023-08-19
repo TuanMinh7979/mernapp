@@ -84,7 +84,7 @@ class PostService {
   ): Promise<void> {
     const updatePost: UpdateQuery<IPostDocument> = PostModel.updateOne(
       { _id: postId.trim() },
-      { $set: updatedPost[0] }
+      { $set: updatedPost }
     );
     await updatePost.exec();
     // await Promise.all([updatePost]);

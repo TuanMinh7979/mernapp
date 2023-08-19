@@ -15,7 +15,7 @@ export class Remove {
     const { postId, previousReaction, postReactions } = req.params;
     //clear react in cache
     // ! Cache:
-    await reactionCache.removePostReactionFromCache(postId, `${req.currentUser!.username}`, JSON.parse(postReactions));
+    // await reactionCache.removePostReactionFromCache(postId, `${req.currentUser!.username}`, JSON.parse(postReactions));
     //remove in DB
     const databaseReactionData: IReactionJob = {
       postId,

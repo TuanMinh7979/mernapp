@@ -13,7 +13,7 @@ import { IFollowerData } from "@root/features/follower/interfaces/follower.inter
 import { IAllUsers, IUserDocument } from "@user/interface/user.interface";
 import { Helpers } from "@global/helpers/helper";
 
-const PAGE_SIZE = 3;
+const PAGE_SIZE = 12;
 
 interface IUserAll {
   newSkip: number;
@@ -72,10 +72,10 @@ export class Get {
   //  * Params:
   //  * Res:IFollowerData
   //   PRIVATE METHOD:
-  private async followers(userId: string): Promise<IFollowerData[]> {
+  private async followees(userId: string): Promise<IFollowerData[]> {
     //  ! Cache:
     // const cachedFollowers: IFollowerData[] =
-    //   await followerCache.getFollowersFromCache(`followers:${userId}`);
+    //   await followerCache.getFollowersFromCache(`followees:${userId}`);
     // const cachedFollowers: IFollowerData[] = [];
     // const result = cachedFollowers.length
     //   ? cachedFollowers
@@ -84,7 +84,7 @@ export class Get {
     //     );
 
     //  ! Service:
-    const result = await followerService.getFollowerData(
+    const result = await followerService.getFolloweeData(
       new mongoose.Types.ObjectId(userId)
     );
     return result;
@@ -103,14 +103,14 @@ export class Get {
       skip,
       userId: `${req.currentUser!.userId}`,
     });
-    const followers: IFollowerData[] = await Get.prototype.followers(
+    const followees: IFollowerData[] = await Get.prototype.followees(
       `${req.currentUser!.userId}`
     );
     res.status(HTTP_STATUS.OK).json({
       message: "Get users",
       users: allUsers.users,
       totalUsers: allUsers.totalUsers,
-      followers,
+      followees,
     });
   }
 

@@ -61,7 +61,6 @@ class FollowerService {
       users,
       userService.getUserById(followeeId),
     ]);
-    console.log("------------======>>>>>>", response);
 
     // ! CMN NOTI:
     if (response[1]?.notifications.follows && userId !== followeeId) {
@@ -85,25 +84,25 @@ class FollowerService {
       //send to client with socketIO
       // ! Socket:
       socketIONotificationObject.emit("insert notification", notifications, {
-        followeeId,
+        userTo: followeeId,
       });
       //send to emailQueue
-      //  ! Email:
-      const templateParams: INotificationTemplate = {
-        username: response[1]?.username!, // userTo
-        message: `${username} follow on you`, //user From
-        header: "Notification of new Follow",
-      };
+      // //  ! Email:
+      // const templateParams: INotificationTemplate = {
+      //   username: response[1]?.username!, // userTo
+      //   message: `${username} follow on you`, //user From
+      //   header: "Notification of new Follow",
+      // };
 
-      const template: string =
-        notificationTemplate.notificationMessageTemplate(templateParams);
-      // ! Queue:
+      // const template: string =
+      //   notificationTemplate.notificationMessageTemplate(templateParams);
+      // // ! Queue:
 
-      emailQueue.addEmailJob("followNotiEmail", {
-        receiverEmail: response[1].email!,
-        template,
-        subject: "Follow Notification ",
-      });
+      // emailQueue.addEmailJob("followNotiEmail", {
+      //   receiverEmail: response[1].email!,
+      //   template,
+      //   subject: "Follow Notification ",
+      // });
     }
   }
   //* Params:

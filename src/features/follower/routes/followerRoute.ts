@@ -15,7 +15,7 @@ class FollowerRoutes {
   public routes(): Router {
     // get all someone's fan
     this.router.get(
-      "/user/follower/:userId",
+      "/user/followers/:userId",
       authMiddleware.checkAuthencation,
       Get.prototype.userFollowers
     );

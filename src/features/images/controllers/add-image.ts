@@ -19,10 +19,9 @@ export class Add {
   //    * Res:
   @joiValidation(addImageSchema)
   public async profileImage(req: Request, res: Response): Promise<void> {
-
     console.log(req.currentUser!.userId);
     // console.log(req.body.image);
-    
+
     const result: UploadApiResponse = (await upload(
       req.body.image,
       req.currentUser!.userId,
@@ -30,12 +29,9 @@ export class Add {
       true
     )) as UploadApiResponse;
     if (!result?.public_id) {
-    
-      
       throw new BadRequestError("File upload: Error occurred. Try again.");
     }
-    const url =
-     `https://res.cloudinary.com/djnekmzdf/image/upload/v${result.version}/${result.public_id}`;
+    const url = result.url;
     // ! Cache:
     // const cachedUser: IUserDocument =
     //   (await userCache.updateSingleUserItemInCache(
@@ -76,7 +72,7 @@ export class Add {
     //   bgImageId,
     //   bgImageVersion,
     // ])) as [IUserDocument, IUserDocument];
-    // ! Socket: 
+    // ! Socket:
     // socketIOImageObject.emit("update user", {
     //   bgImageId: publicId,
     //   bgImageVersion: version,

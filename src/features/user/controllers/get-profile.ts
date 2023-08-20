@@ -13,7 +13,7 @@ import { IFollowerData } from "@root/features/follower/interfaces/follower.inter
 import { IAllUsers, IUserDocument } from "@user/interface/user.interface";
 import { Helpers } from "@global/helpers/helper";
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 3;
 
 interface IUserAll {
   newSkip: number;
@@ -29,10 +29,13 @@ export class Get {
   //  * Res:number
   //   PRIVATE METHOD:
   private async usersCount(type: string): Promise<number> {
-    const totalUsers: number =
-      type === "redis"
-        ? await userCache.getTotalUsersInCache()
-        : await userService.getTotalUsersInDB();
+    //  ! Cache:
+    // const totalUsers: number =
+    //   type === "redis"
+    //     ? await userCache.getTotalUsersInCache()
+    //     : await userService.getTotalUsersInDB();
+    // ! Service:
+    const totalUsers = await userService.getTotalUsersInDB();
     return totalUsers;
   }
   //  * Params:
@@ -52,14 +55,17 @@ export class Get {
     //   limit,
     //   userId
     // )) as IUserDocument[];
-    const cachedUsers: IUserDocument[] = [];
-    if (cachedUsers.length) {
-      type = "redis";
-      users = cachedUsers;
-    } else {
-      type = "mongodb";
-      users = await userService.getAllUsers(userId, skip, limit);
-    }
+    // const cachedUsers: IUserDocument[] = [];
+    // if (cachedUsers.length) {
+    //   type = "redis";
+    //   users = cachedUsers;
+    // } else {
+    //   type = "mongodb";
+    //   users = await userService.getAllUsers(userId, skip, limit);
+    // }
+    //  ! Services:
+    users = await userService.getAllUsers(userId, skip, limit);
+
     const totalUsers: number = await Get.prototype.usersCount(type);
     return { users, totalUsers };
   }
@@ -70,16 +76,22 @@ export class Get {
     //  ! Cache:
     // const cachedFollowers: IFollowerData[] =
     //   await followerCache.getFollowersFromCache(`followers:${userId}`);
-    const cachedFollowers: IFollowerData[] = [];
-    const result = cachedFollowers.length
-      ? cachedFollowers
-      : await followerService.getFollowerData(
-          new mongoose.Types.ObjectId(userId)
-        );
+    // const cachedFollowers: IFollowerData[] = [];
+    // const result = cachedFollowers.length
+    //   ? cachedFollowers
+    //   : await followerService.getFollowerData(
+    //       new mongoose.Types.ObjectId(userId)
+    //     );
+
+    //  ! Service:
+    const result = await followerService.getFollowerData(
+      new mongoose.Types.ObjectId(userId)
+    );
     return result;
   }
   // * Params:
   // * Res:
+
   public async all(req: Request, res: Response): Promise<void> {
     const { page } = req.params;
     const skip: number = (parseInt(page) - 1) * PAGE_SIZE;
@@ -113,6 +125,7 @@ export class Get {
 
     // const existingUser: IUserDocument = cachedUser   ? cachedUser
     //   : await userService.getUserById(`${req.currentUser!.userId}`);
+    //  ! Service: 
     const existingUser: IUserDocument = await userService.getUserById(
       `${req.currentUser!.userId}`
     );
@@ -130,6 +143,7 @@ export class Get {
     //  ! Cache:
     // const cachedUser: IUserDocument = (await userCache.getUserFromCache(userId)) as IUserDocument;
     // const existingUser: IUserDocument = cachedUser ? cachedUser : await userService.getUserById(userId);
+    //  ! Service: 
     const existingUser: IUserDocument = await userService.getUserById(userId);
     res
       .status(HTTP_STATUS.OK)
@@ -141,17 +155,20 @@ export class Get {
   public async profileAndPosts(req: Request, res: Response): Promise<void> {
     const { userId, username, uId } = req.params;
     const userName: string = Helpers.firstLetterUppercase(username);
-    const cachedUser: IUserDocument = (await userCache.getUserFromCache(
-      userId
-    )) as IUserDocument;
-    // //!  Cache:
+    //!  Cache:
+    // const cachedUser: IUserDocument = (await userCache.getUserFromCache(
+    //   userId
+    // )) as IUserDocument;
+
     // const cachedUserPosts: IPostDocument[] =
     //   await postCache.getUserPostsFromCache("post", parseInt(uId, 10));
 
     // const existingUser: IUserDocument = cachedUser? cachedUser:
+    //  ! Service:
     const existingUser: IUserDocument = await userService.getUserById(userId);
     //!  Cache:
     // const userPosts: IPostDocument[] = cachedUserPosts.length? cachedUserPosts:
+    //  ! Service:
     const userPosts: IPostDocument[] = await postService.getPosts(
       { username: userName },
       0,
@@ -184,11 +201,16 @@ export class Get {
     // if (cachedUsers.length) {
     //   randomUsers = [...cachedUsers];
     // } else {
+    // const users: IUserDocument[] = await userService.getRandomUsers(
+    //   req.currentUser!.userId
+    // );
+    // randomUsers = [...users];
+    // }
+    //  ! Service:
     const users: IUserDocument[] = await userService.getRandomUsers(
       req.currentUser!.userId
     );
     randomUsers = [...users];
-    // }
     res
       .status(HTTP_STATUS.OK)
       .json({ message: "User suggestions", users: randomUsers });

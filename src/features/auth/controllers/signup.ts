@@ -3,7 +3,10 @@ import { Request, Response } from "express";
 import { joiValidation } from "@global/decorators/joi-validation.decorators";
 import { signupSchema } from "@auth/schemes/signup";
 import { authService } from "@service/db/auth.service";
-import { IAuthDocument, ICreateAuthData } from "@auth/interfaces/auth.interface";
+import {
+  IAuthDocument,
+  ICreateAuthData,
+} from "@auth/interfaces/auth.interface";
 import { BadRequestError } from "@global/helpers/error-handler";
 import { Helpers } from "@global/helpers/helper";
 import { UploadApiResponse } from "cloudinary";
@@ -21,7 +24,7 @@ import { userQueue } from "@service/queue/user.queue";
 
 const userCache: UserCache = new UserCache();
 export class SignUp {
-    //   * Params:
+  //   * Params:
   // * username:
   // * email,
   // * password,
@@ -31,12 +34,12 @@ export class SignUp {
   @joiValidation(signupSchema)
   public async create(req: Request, res: Response): Promise<void> {
     const { username, email, password, avatarColor, avatarImage } = req.body;
-    console.log("INPUT",  username, email);
-    
+    console.log("INPUT", username, email);
+
     const checkIfUserExists: IAuthDocument =
       await authService.getAuthByUsernameOrEmail(username, email); //
-      console.log(checkIfUserExists);
-      
+    console.log(checkIfUserExists);
+
     if (checkIfUserExists) {
       throw new BadRequestError("Invalid credentials ");
     }
@@ -51,8 +54,7 @@ export class SignUp {
       password,
       avatarColor,
     });
-    console.log("--------------HERE");
-    
+
     const result: UploadApiResponse = (await upload(
       avatarImage,
       `${userObjectId}/upload`,
@@ -62,15 +64,19 @@ export class SignUp {
     if (!result?.public_id) {
       throw new BadRequestError("File upload: Invalid credentials");
     }
-    console.log("--------------HERE1");
-     // ! Cache: user data for cache
+
+    // ! Cache: user data for cache
     const userDataForCache: IUserDocument = SignUp.prototype.createUserData(
       authData,
       userObjectId
     );
 
-    userDataForCache.profilePicture = 
-    `https://res.cloudinary.com/djnekmzdf/image/upload/v${result.version}/${userObjectId}`;
+    console.log(
+      "_________________________________________________UPLOAD RESULT",
+      result
+    );
+
+    userDataForCache.profilePicture = result.url;
     await userCache.saveUserToCache(`${userObjectId}`, uId, userDataForCache);
 
     // * remove some property for User Document
@@ -81,7 +87,7 @@ export class SignUp {
       "avatarColor",
       "password",
     ]);
-    // ! Queue: 
+    // ! Queue:
     authQueue.addAuthUserJob("addAuthUserToDb", { value: authData });
     userQueue.addUserToDbJob("addUserToDB", { value: userDataForCache });
 
@@ -99,7 +105,7 @@ export class SignUp {
   //   * Params:
   // * data: IAuthDocument data to create jwt
   // * userObjectId: User._id to create jwt ,
-  // * Res: string 
+  // * Res: string
   private signupToken(data: IAuthDocument, userObjectId: ObjectId): string {
     return jwt.sign(
       {
@@ -113,8 +119,8 @@ export class SignUp {
     );
   }
   //   * Params:
-  // * data: ICreateAuthData data  
-  // * Res: IAuthDocument 
+  // * data: ICreateAuthData data
+  // * Res: IAuthDocument
   private createAuthData(data: ICreateAuthData): IAuthDocument {
     const { _id, username, email, uId, password, avatarColor } = data;
     return {
@@ -128,10 +134,13 @@ export class SignUp {
     } as IAuthDocument;
   }
   //   * Params:
-  // * data: IAuthDocument data  
-  // * userObjectId:  objectId to create User Document  
-  // * Res: IUserDocument 
-  private createUserData(data: IAuthDocument, userObjectId: ObjectId): IUserDocument {
+  // * data: IAuthDocument data
+  // * userObjectId:  objectId to create User Document
+  // * Res: IUserDocument
+  private createUserData(
+    data: IAuthDocument,
+    userObjectId: ObjectId
+  ): IUserDocument {
     const { _id, username, email, uId, password, avatarColor } = data;
     return {
       _id: userObjectId,

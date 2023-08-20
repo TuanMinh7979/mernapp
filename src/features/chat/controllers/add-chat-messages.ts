@@ -61,7 +61,7 @@ export class Add {
       if (!result?.public_id) {
         throw new BadRequestError(result.message);
       }
-      fileUrl = `https://res.cloudinary.com/djnekmzdf/image/upload/v${result.version}/${result.public_id}`;
+      fileUrl = result.url;
     }
 
     // save to cache and DB

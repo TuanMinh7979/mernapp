@@ -20,6 +20,7 @@ import { notificationTemplate } from "@service/emails/template/notifications/not
 import { emailQueue } from "@service/queue/email.queue";
 import { MessageCache } from "@service/redis/message.cache";
 import { chatQueue } from "@service/queue/chat.queue";
+import { userService } from "@service/db/user.service";
 
 const userCache: UserCache = new UserCache();
 const messageCache: MessageCache = new MessageCache();
@@ -46,9 +47,12 @@ export class Add {
       ? new ObjectId()
       : new mongoose.Types.ObjectId(conversationId);
     // ! Cache:
-    const sender: IUserDocument = (await userCache.getUserFromCache(
-      `${req.currentUser!.userId}`
-    )) as IUserDocument;
+    // const sender: IUserDocument = (await userCache.getUserFromCache(
+    //   `${req.currentUser!.userId}`
+    // )) as IUserDocument;
+
+    //  ! Service:
+    const sender = await userService.getUserById(req.currentUser!.userId);
 
     // if user want send image with image
     if (selectedImage.length) {
@@ -97,21 +101,21 @@ export class Add {
     //     messageData,
     //   });
     // }
-   //  ! Cache:
-    await messageCache.addChatListToCache(
-      `${req.currentUser!.userId}`,
-      `${receiverId}`,
-      `${conversationObjectId}`
-    );
-    await messageCache.addChatListToCache(
-      `${receiverId}`,
-      `${req.currentUser!.userId}`,
-      `${conversationObjectId}`
-    );
-    await messageCache.addChatMessageToCache(
-      `${conversationObjectId}`,
-      messageData
-    );
+    //  ! Cache:
+    // await messageCache.addChatListToCache(
+    //   `${req.currentUser!.userId}`,
+    //   `${receiverId}`,
+    //   `${conversationObjectId}`
+    // );
+    // await messageCache.addChatListToCache(
+    //   `${receiverId}`,
+    //   `${req.currentUser!.userId}`,
+    //   `${conversationObjectId}`
+    // );
+    // await messageCache.addChatMessageToCache(
+    //   `${conversationObjectId}`,
+    //   messageData
+    // );
     //  ! Queue:
     chatQueue.addChatJob("addChatMessageToDB", messageData);
 
@@ -148,24 +152,24 @@ export class Add {
   }: IMessageNotification): Promise<void> {
     // ! CMN NOTI:
     //!  Cache :
-    const cachedUser: IUserDocument = (await userCache.getUserFromCache(
-      `${receiverId}`
-    )) as IUserDocument;
-    if (cachedUser.notifications.messages) {
-      // ! Email:
-      const templateParams: INotificationTemplate = {
-        username: receiverName,
-        message,
-        header: `Message notification from ${currentUser.username}`,
-      };
-      const template: string =
-        notificationTemplate.notificationMessageTemplate(templateParams);
-      // ! Queue
-      emailQueue.addEmailJob("directMessageEmail", {
-        receiverEmail: cachedUser.email!,
-        template,
-        subject: `You've received messages from ${currentUser.username}`,
-      });
-    }
+    // const cachedUser: IUserDocument = (await userCache.getUserFromCache(
+    //   `${receiverId}`
+    // )) as IUserDocument;
+    // if (cachedUser.notifications.messages) {
+      // // ! Email:
+      // const templateParams: INotificationTemplate = {
+      //   username: receiverName,
+      //   message,
+      //   header: `Message notification from ${currentUser.username}`,
+      // };
+      // const template: string =
+      //   notificationTemplate.notificationMessageTemplate(templateParams);
+      // // ! Queue
+      // emailQueue.addEmailJob("directMessageEmail", {
+      //   receiverEmail: cachedUser.email!,
+      //   template,
+      //   subject: `You've received messages from ${currentUser.username}`,
+      // });
+    // }
   }
 }

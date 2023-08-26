@@ -76,6 +76,8 @@ class ChatService {
       },
       { $sort: { createdAt: 1 } },
     ]);
+    console.log(">>>>>>>>>>>>>",messages);
+    
     return messages;
   }
 

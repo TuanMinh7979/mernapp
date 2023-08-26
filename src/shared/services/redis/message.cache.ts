@@ -143,7 +143,7 @@ export class MessageCache extends BaseCache {
       // key is userId of user who sender image
       // rs is list of receiver userId and conversationId
       const userChatList: string[] = await this.client.LRANGE(
-        `chatList:${key}`,
+        `chatUsers:${key}`,
         0,
         -1
       );

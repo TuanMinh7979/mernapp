@@ -42,7 +42,7 @@ class UserService {
   //   * userId:_id of User collection
   //   * Res: IUserDocument
   public async getUserById(userId: string): Promise<IUserDocument> {
-    log.info("getUserById.params1: ", userId);
+
     const users: IUserDocument[] = await UserModel.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(userId) } },
       {
@@ -56,7 +56,7 @@ class UserService {
       { $unwind: "$authId" },
       { $project: this.aggregateProject() },
     ]);
-    log.info("getUserById=> ", users);
+
 
     return users[0];
   }
@@ -226,29 +226,21 @@ class UserService {
   public async searchUsers(regex: RegExp): Promise<ISearchUser[]> {
     const users = await AuthModel.aggregate([
       { $match: { username: regex } },
-      {
-        $lookup: {
-          from: "User",
-          localField: "_id",
-          foreignField: "authId",
-          as: "user",
-        },
-      },
-      {
-        $unwind: "$user",
-      },
+      { $lookup: { from: 'User', localField: '_id', foreignField: 'authId', as: 'user' } },
+      { $unwind: '$user' },
       {
         $project: {
-          _id: "$user._id",
+          _id: '$user._id',
           username: 1,
           email: 1,
           avatarColor: 1,
-          profilePicture: 1,
-        },
-      },
+          profilePicture: '$user.profilePicture'
+        }
+      }
     ]);
     return users;
   }
+
 
   public async updatePassword(
     username: string,

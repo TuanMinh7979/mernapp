@@ -31,7 +31,7 @@ class ReactionService {
   //   * reactionData
   //   * Res: IUserDocument
   public async addReactionDataToDB(reactionData: IReactionJob): Promise<void> {
-    log.info("-----------------------");
+
     const {
       postId,
       userTo,
@@ -69,7 +69,7 @@ class ReactionService {
           { new: true }
         ),
       ])) as unknown as [IUserDocument, IReactionDocument, IPostDocument];
-    log.info(updatedReaction);
+
     // ! CMN NOTI:
     if (updatedReaction[0].notifications.reactions && userTo !== userFrom) {
       log.info();

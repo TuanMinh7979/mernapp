@@ -17,10 +17,12 @@ export class Update {
   @joiValidation(markChatSchema)
   public async message(req: Request, res: Response): Promise<void> {
     const { senderId, receiverId } = req.body;
-    const updatedMessage: IMessageData = await messageCache.updateChatMessages(`${senderId}`, `${receiverId}`);
+    // const updatedMessage: IMessageData = await messageCache.updateChatMessages(`${senderId}`, `${receiverId}`);
+    // console.log(">>>>>>>>>>>>>>>>>>update message",updatedMessage);
+    
     // ! Socket: 
-    socketIOChatObject.emit('message read', updatedMessage);
-    socketIOChatObject.emit('chat list', updatedMessage);
+    // socketIOChatObject.emit('message read', updatedMessage);
+    // socketIOChatObject.emit('chat list', updatedMessage);
     // ! Queue:
     chatQueue.addChatJob('markMessagesAsReadInDB', {
       senderId: new mongoose.Types.ObjectId(senderId),

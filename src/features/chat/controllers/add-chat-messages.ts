@@ -138,9 +138,11 @@ export class Add {
 
   private emitSocketIOEvent(data: IMessageData): void {
     // update chat messgaes
-    socketIOChatObject.emit("message received", data);
-    //update chatlist
-    socketIOChatObject.emit("chat list", data);
+    const { senderId, receiverId } = data;
+    socketIOChatObject.to(senderId).emit("message received", data);
+    socketIOChatObject.to(senderId).emit("chat list", data);
+    socketIOChatObject.to(receiverId).emit("message received", data);
+    socketIOChatObject.to(receiverId).emit("chat list", data);
   }
   //* Param:
   //* Res:
@@ -156,20 +158,20 @@ export class Add {
     //   `${receiverId}`
     // )) as IUserDocument;
     // if (cachedUser.notifications.messages) {
-      // // ! Email:
-      // const templateParams: INotificationTemplate = {
-      //   username: receiverName,
-      //   message,
-      //   header: `Message notification from ${currentUser.username}`,
-      // };
-      // const template: string =
-      //   notificationTemplate.notificationMessageTemplate(templateParams);
-      // // ! Queue
-      // emailQueue.addEmailJob("directMessageEmail", {
-      //   receiverEmail: cachedUser.email!,
-      //   template,
-      //   subject: `You've received messages from ${currentUser.username}`,
-      // });
+    // // ! Email:
+    // const templateParams: INotificationTemplate = {
+    //   username: receiverName,
+    //   message,
+    //   header: `Message notification from ${currentUser.username}`,
+    // };
+    // const template: string =
+    //   notificationTemplate.notificationMessageTemplate(templateParams);
+    // // ! Queue
+    // emailQueue.addEmailJob("directMessageEmail", {
+    //   receiverEmail: cachedUser.email!,
+    //   template,
+    //   subject: `You've received messages from ${currentUser.username}`,
+    // });
     // }
   }
 }

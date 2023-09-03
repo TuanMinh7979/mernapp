@@ -11,6 +11,7 @@ import { IBgUploadResponse } from "@image/interface/image.interface";
 import { imageQueue } from "@service/queue/image.queue";
 import { Helpers } from "@global/helpers/helper";
 import { upload } from "@global/helpers/cloudinary-upload";
+import { userService } from "@service/db/user.service";
 
 const userCache: UserCache = new UserCache();
 
@@ -19,9 +20,6 @@ export class Add {
   //    * Res:
   @joiValidation(addImageSchema)
   public async profileImage(req: Request, res: Response): Promise<void> {
-    console.log(req.currentUser!.userId);
-    // console.log(req.body.image);
-
     const result: UploadApiResponse = (await upload(
       req.body.image,
       req.currentUser!.userId,
@@ -29,6 +27,8 @@ export class Add {
       true
     )) as UploadApiResponse;
     if (!result?.public_id) {
+      console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>::::::::::", result);
+
       throw new BadRequestError("File upload: Error occurred. Try again.");
     }
     const url = result.url;

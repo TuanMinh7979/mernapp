@@ -53,8 +53,7 @@ export class SignUp {
       email,
       password,
       avatarColor,
-    });
-
+    });    
     const result: UploadApiResponse = (await upload(
       avatarImage,
       `${userObjectId}/upload`,
@@ -71,10 +70,6 @@ export class SignUp {
       userObjectId
     );
 
-    console.log(
-      "_________________________________________________UPLOAD RESULT",
-      result
-    );
 
     userDataForCache.profilePicture = result.url;
     await userCache.saveUserToCache(`${userObjectId}`, uId, userDataForCache);

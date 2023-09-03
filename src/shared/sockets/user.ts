@@ -16,9 +16,9 @@ export class SocketIOUserHandler {
   public listen(): void {
     this.io.on("connection", (socket: Socket) => {
       socket.on("setup", (data: ILogin) => {
-        this.addClientToMap(data.userId, socket.id);
-        this.addUser(data.userId);
-        this.io.emit("user online", users);
+        // this.addClientToMap(data.userId, socket.id);
+        // this.addUser(data.userId);
+        // this.io.emit("user online", users);
       });
 
       socket.on("block user", (data: ISocketData) => {

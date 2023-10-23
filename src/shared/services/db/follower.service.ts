@@ -37,24 +37,25 @@ class FollowerService {
       followerId: followerObjectId,
     });
     // update userModel, update multiple documents on one mongo call
-    const update2UserFollowProps = UserModel.bulkWrite([
-      {
-        updateOne: {
-          filter: { _id: userId },
-          update: {
-            $inc: { followingCount: 1 },
+    const update2UserFollowProps: Promise<BulkWriteResult> =
+      UserModel.bulkWrite([
+        {
+          updateOne: {
+            filter: { _id: userId },
+            update: {
+              $inc: { followingCount: 1 },
+            },
           },
         },
-      },
-      {
-        updateOne: {
-          filter: { _id: followeeId },
-          update: {
-            $inc: { followersCount: 1 },
+        {
+          updateOne: {
+            filter: { _id: followeeId },
+            update: {
+              $inc: { followersCount: 1 },
+            },
           },
         },
-      },
-    ]);
+      ]);
     const response = await Promise.all([
       update2UserFollowProps,
       userService.getUserAuthByUserId(followeeId),
@@ -105,20 +106,21 @@ class FollowerService {
       followerId: followerObjectId,
     });
 
-    const update2UserFollowProps = UserModel.bulkWrite([
-      {
-        updateOne: {
-          filter: { _id: followerId },
-          update: { $inc: { followingCount: -1 } },
+    const update2UserFollowProps: Promise<BulkWriteResult> =
+      UserModel.bulkWrite([
+        {
+          updateOne: {
+            filter: { _id: followerId },
+            update: { $inc: { followingCount: -1 } },
+          },
         },
-      },
-      {
-        updateOne: {
-          filter: { _id: followeeId },
-          update: { $inc: { followersCount: -1 } },
+        {
+          updateOne: {
+            filter: { _id: followeeId },
+            update: { $inc: { followersCount: -1 } },
+          },
         },
-      },
-    ]);
+      ]);
     await Promise.all([removeFollowRecord, update2UserFollowProps]);
   }
 
@@ -229,6 +231,8 @@ class FollowerService {
   //* userId: userId of user to get all idol
   //* Res: String[] as list of idol ids string
   public async getFolloweesIds(userId: string): Promise<string[]> {
+
+
     const followee = await FollowerModel.aggregate([
       { $match: { followerId: new mongoose.Types.ObjectId(userId) } },
       {

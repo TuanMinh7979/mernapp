@@ -1,4 +1,4 @@
-import { authMiddleware } from "@global/helpers/aurth-middleware";
+import { authMiddleware } from "@global/middlewares/aurth-middleware";
 import express, { Router } from "express";
 import { Create } from "../controllers/create-post";
 import { Get } from "@post/controllers/get-post";
@@ -32,7 +32,7 @@ class PostRoutes {
     this.router.post(
       "/post/image/post",
       authMiddleware.checkAuthencation,
-      Create.prototype.postWithImage
+      Create.prototype.postWithNewImage
     );
 
     this.router.delete(
@@ -49,7 +49,7 @@ class PostRoutes {
     this.router.put(
       "/post/image/:postId",
       authMiddleware.checkAuthencation,
-      Update.prototype.postWithImage
+      Update.prototype.postWithNewImage
     );
 
     return this.router;

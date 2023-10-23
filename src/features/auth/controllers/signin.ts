@@ -2,74 +2,69 @@ import { ObjectId } from "mongodb";
 import { Request, Response } from "express";
 import { joiValidation } from "@global/decorators/joi-validation.decorators";
 import { authService } from "@service/db/auth.service";
-import { IAuthDocument, ICreateAuthData } from "@auth/interfaces/auth.interface";
+import { IAuthDocument } from "@auth/interfaces/auth.interface";
 import { BadRequestError } from "@global/helpers/error-handler";
 
 import HTTP_STATUS from "http-status-codes";
 
-import {
+import { IUserAuthDocument } from "@user/interface/user.interface";
 
-  IUserDocument,
-} from "@user/interface/user.interface";
-import jwt from "jsonwebtoken";
-import { config } from "@root/config";
 import { loginSchema } from "@auth/schemes/signin";
 import { userService } from "@service/db/user.service";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+} from "@root/shared/utils/generate-token-utils";
+
+
 export class SignIn {
-
-  // * Params: 
-  // * Res: void 
-
   @joiValidation(loginSchema)
   public async read(req: Request, res: Response): Promise<void> {
     const { username, password } = req.body;
+    // ! 1. check exist authModel by username
     const existAuth: IAuthDocument = await authService.getAuthByUsername(
       username
     );
     if (!existAuth) {
       throw new BadRequestError("Invalid credentials");
     }
-
-    const passwordsMatch: boolean = await existAuth.comparePassword(
-      password
-    );
+    // ! 2. compare password
+    const passwordsMatch: boolean = await existAuth.comparePassword(password);
     if (!passwordsMatch) {
       throw new BadRequestError("Invalid credentials");
     }
-    const user: IUserDocument = await userService.getUserByAuthId(
+    // ! 3. get userModel existAuthModel._id
+    const existUser: IUserAuthDocument = await userService.getUserByAuthId(
       existAuth._id.toString()
     );
-   
-    if (!user) {
+
+    if (!existUser) {
       throw new BadRequestError("Invalid credentials");
     }
-    const userJwt: string = jwt.sign(
-      {
-        userId: user._id,
-        uId: existAuth.uId,
-        email: existAuth.email,
-        username: existAuth.username,
-        avatarColor: existAuth.avatarColor,
-      },
-      config.JWT_TOKEN!
-    );
-    req.session = { jwt: userJwt };
-    const userDocument: IUserDocument = {
-      ...user,
-      authId: existAuth!._id,
+    // ! 4. create jwt
+
+    const accessToken: string = generateAccessToken({
+      userId: existUser._id.toString(),
+      email: existAuth.email,
+      username: existAuth.username,
+      avatarColor: existAuth.avatarColor,
+    });
+
+    generateRefreshToken({ userId: existUser._id.toString() }, res);
+
+    const userAuthData: IUserAuthDocument = {
+      ...existUser,
+
       username: existAuth!.username,
       email: existAuth!.email,
       avatarColor: existAuth!.avatarColor,
-      uId: existAuth!.uId,
       createdAt: existAuth!.createdAt,
-    } as IUserDocument;
+    } as IUserAuthDocument;
 
-    console.log(userDocument);
-    
     res.status(HTTP_STATUS.OK).json({
       message: "User login successfully",
-      user: userDocument,
-      token: userJwt,
+      user: userAuthData,
+      token: accessToken,
     });
   }
 }

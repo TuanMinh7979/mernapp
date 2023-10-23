@@ -1,32 +1,41 @@
-import { Request, Response } from 'express';
-import HTTP_STATUS from 'http-status-codes';
-import { FollowerCache } from '@service/redis/follower.cache';
-import { followQueue } from '@service/queue/follow.queue';
+import { Request, Response } from "express";
+import HTTP_STATUS from "http-status-codes";
 
-
-const followerCache: FollowerCache = new FollowerCache();
-
+import { followerService } from "@service/db/follower.service";
+import { userService } from "@service/db/user.service";
+import { socketIOFollowerObject } from "@socket/follower";
+import { IUserAuthDocument } from "@user/interface/user.interface";
+import mongoose from "mongoose";
+import { IFollowerData } from "../interfaces/follower.interface";
 export class Remove {
   //* Params:
   //* Res:
-  public async follower(req: Request, res: Response): Promise<void> {
+  public async remove(req: Request, res: Response): Promise<void> {
     const { followeeId, followerId } = req.params;
-    const removeFollowerFromCache: Promise<void> = followerCache.removeFollowFromCache(
-      `following:${followeeId}`,
-      `${followerId}`
+
+    // ! Service:
+    await followerService.removeFollowerFromDB(followeeId, followerId);
+
+    //  ! Service:
+    const updatedIdol = await userService.getUserAuthByUserId(followeeId);
+    socketIOFollowerObject.emit(
+      "removed follow",
+      Remove.prototype.toFollowerData(updatedIdol)
     );
-    // ! Cache:
-    const removeFolloweeFromCache: Promise<void> = followerCache.removeFollowFromCache(`follower:${followerId}`, followeeId);
 
-    const followersCount: Promise<void> = followerCache.updateFolloweCountInCache(`${followeeId}`, 'followersCount', -1);
-    const followeeCount: Promise<void> = followerCache.updateFolloweCountInCache(`${followerId}`, 'followingCount', -1);
-    await Promise.all([removeFollowerFromCache, removeFolloweeFromCache, followersCount, followeeCount]);
+    res.status(HTTP_STATUS.OK).json({ message: "Unfollowed user now" });
+  }
 
-    // ! Queue:
-    followQueue.addFollowJob('removeFollowFromDB', {
-      keyOne: `${followeeId}`,
-      keyTwo: `${followerId}`
-    });
-    res.status(HTTP_STATUS.OK).json({ message: 'Unfollowed user now' });
+  private toFollowerData(user: IUserAuthDocument): IFollowerData {
+    return {
+      _id: new mongoose.Types.ObjectId(user._id),
+      username: user.username!,
+      avatarColor: user.avatarColor!,
+      postsCount: user.postsCount,
+      followersCount: user.followersCount,
+      followingCount: user.followingCount,
+      profilePicture: user.profilePicture,
+
+    };
   }
 }

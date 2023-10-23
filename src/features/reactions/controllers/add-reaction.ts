@@ -3,15 +3,15 @@ import { ObjectId } from "mongodb";
 import HTTP_STATUS from "http-status-codes";
 import { joiValidation } from "@global/decorators/joi-validation.decorators";
 
-import { ReactionCache } from "@service/redis/reaction.cache";
+
 import { addReactionSchema } from "../schemes/reaction";
 import {
   IReactionDocument,
   IReactionJob,
 } from "../interfaces/reaction.interface";
-import { reactionQueue } from "@service/queue/reaction.queue";
+
 import { reactionService } from "@service/db/reaction.service";
-const reactionCache: ReactionCache = new ReactionCache();
+
 
 export class Add {
   // * Params:
@@ -35,14 +35,7 @@ export class Add {
       username: req.currentUser!.username,
       profilePicture,
     } as IReactionDocument;
-    // ! Cache:
-    // await reactionCache.savePostReactionToCache(
-    //   postId,
-    //   reactionObject,
-    //   postReactions,
-    //   type,
-    //   previousReaction
-    // );
+
     const databaseReactionData: IReactionJob = {
       postId,
       userTo: userTo,
@@ -52,8 +45,7 @@ export class Add {
       previousReaction,
       reactionObject,
     };
-    // ! Queue:
-    // reactionQueue.addReactionJob("addReactionToDB", databaseReactionData);
+
 
     //  ! Service:
     await reactionService.addReactionDataToDB(databaseReactionData);

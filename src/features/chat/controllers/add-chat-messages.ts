@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import HTTP_STATUS from "http-status-codes";
-import { UserCache } from "@service/redis/user.cache";
 
 import { joiValidation } from "@global/decorators/joi-validation.decorators";
 import { addChatSchema } from "@chat/schemes/chat";
@@ -13,17 +12,12 @@ import {
   IMessageData,
   IMessageNotification,
 } from "@chat/interfaces/chat.interface";
-import { IUserDocument } from "@user/interface/user.interface";
+
 import { socketIOChatObject } from "@socket/chat";
-import { INotificationTemplate } from "@notification/interfaces/notification.inteface";
-import { notificationTemplate } from "@service/emails/template/notifications/notification-template";
-import { emailQueue } from "@service/queue/email.queue";
-import { MessageCache } from "@service/redis/message.cache";
-import { chatQueue } from "@service/queue/chat.queue";
 
-const userCache: UserCache = new UserCache();
-const messageCache: MessageCache = new MessageCache();
-
+import { userService } from "@service/db/user.service";
+import { chatService } from "@service/db/chat.service";
+import { userOnRoom } from "@socket/chat";
 export class Add {
   //* Param:
   //* Res:
@@ -40,20 +34,25 @@ export class Add {
       isRead,
       selectedImage,
     } = req.body;
-    let fileUrl = "";
+
+
+
     const messageObjectId: ObjectId = new ObjectId();
     const conversationObjectId: ObjectId = !conversationId
       ? new ObjectId()
       : new mongoose.Types.ObjectId(conversationId);
-    // ! Cache:
-    const sender: IUserDocument = (await userCache.getUserFromCache(
-      `${req.currentUser!.userId}`
-    )) as IUserDocument;
 
-    // if user want send image with image
+    //  ! 1. get sender user info
+    //  ! Service:
+    const sender = await userService.getUserAuthByUserId(
+      req.currentUser!.userId
+    );
+
+    // ! 2. if selectedImage then upload this image
+    let fileUrl = "";
     if (selectedImage.length) {
       const result: UploadApiResponse = (await upload(
-        req.body.image,
+        req.body.selectedImage,
         req.currentUser!.userId,
         true,
         true
@@ -61,10 +60,26 @@ export class Add {
       if (!result?.public_id) {
         throw new BadRequestError(result.message);
       }
-      fileUrl = `https://res.cloudinary.com/djnekmzdf/image/upload/v${result.version}/${result.public_id}`;
+      fileUrl = result.url;
     }
 
-    // save to cache and DB
+    // ! 3.create messageModel from (1) and (2)
+    let isTargetOnline = false;
+
+    if (conversationId) {
+
+
+      const targetSocketId = userOnRoom.get(receiverId) as string;
+      const targetSocket =
+        socketIOChatObject.sockets.sockets.get(targetSocketId);
+
+      if (targetSocket) {
+        // check if target socket has joined the room or not
+        isTargetOnline = targetSocket.rooms.has(`room_${conversationId}`);
+   
+      }
+    }
+
     const messageData: IMessageData = {
       _id: `${messageObjectId}`,
       conversationId: new mongoose.Types.ObjectId(conversationObjectId),
@@ -77,95 +92,35 @@ export class Add {
       senderAvatarColor: `${req.currentUser!.avatarColor}`,
       senderProfilePicture: `${sender.profilePicture}`,
       body,
-      isRead,
+      isRead: isTargetOnline,
       gifUrl,
       selectedImage: fileUrl,
       reaction: [],
       createdAt: new Date(),
       deleteForEveryone: false,
-      deleteForMe: false,
+      deletedByUsers: [],
     };
+
+
+    // ! 4.emit socket "chat list", "messgage receied" to sender and received(4 emit)
     Add.prototype.emitSocketIOEvent(messageData);
+    //  ! Service
+    //! 5.save message data to db.Message
+    await chatService.addMessageToDB(messageData);
 
-    // ! CMN NOTI:
-    // if (!isRead) {
-    //   Add.prototype.messageNotification({
-    //     currentUser: req.currentUser!,
-    //     message: body,
-    //     receiverName: receiverUsername,
-    //     receiverId,
-    //     messageData,
-    //   });
-    // }
-   //  ! Cache:
-    await messageCache.addChatListToCache(
-      `${req.currentUser!.userId}`,
-      `${receiverId}`,
-      `${conversationObjectId}`
-    );
-    await messageCache.addChatListToCache(
-      `${receiverId}`,
-      `${req.currentUser!.userId}`,
-      `${conversationObjectId}`
-    );
-    await messageCache.addChatMessageToCache(
-      `${conversationObjectId}`,
-      messageData
-    );
-    //  ! Queue:
-    chatQueue.addChatJob("addChatMessageToDB", messageData);
-
-    res
-      .status(HTTP_STATUS.OK)
-      .json({ message: "Message added", conversationId: conversationObjectId });
+    res.status(HTTP_STATUS.OK).json({
+      message: "Message added",
+      conversationId: conversationObjectId.toString(),
+    });
   }
   //
-  public async addChatUsers(req: Request, res: Response): Promise<void> {
-    const chatUsers = await messageCache.addChatUsersToCache(req.body);
-    socketIOChatObject.emit("add chat users", chatUsers);
-    res.status(HTTP_STATUS.OK).json({ message: "Users added" });
-  }
-
-  public async removeChatUsers(req: Request, res: Response): Promise<void> {
-    const chatUsers = await messageCache.removeChatUsersFromCache(req.body);
-    socketIOChatObject.emit("add chat users", chatUsers);
-    res.status(HTTP_STATUS.OK).json({ message: "Users removed" });
-  }
 
   private emitSocketIOEvent(data: IMessageData): void {
     // update chat messgaes
-    socketIOChatObject.emit("message received", data);
-    //update chatlist
-    socketIOChatObject.emit("chat list", data);
-  }
-  //* Param:
-  //* Res:
-  private async messageNotification({
-    currentUser,
-    message,
-    receiverName,
-    receiverId,
-  }: IMessageNotification): Promise<void> {
-    // ! CMN NOTI:
-    //!  Cache :
-    const cachedUser: IUserDocument = (await userCache.getUserFromCache(
-      `${receiverId}`
-    )) as IUserDocument;
-    if (cachedUser.notifications.messages) {
-      // ! Email:
-      const templateParams: INotificationTemplate = {
-        username: receiverName,
-        message,
-        header: `Message notification from ${currentUser.username}`,
-      };
-      const template: string =
-        notificationTemplate.notificationMessageTemplate(templateParams);
-      // ! Queue
-      emailQueue.addEmailJob("directMessageEmail", {
-        receiverEmail: cachedUser.email!,
-        template,
-        subject: `You've received messages from ${currentUser.username}`,
-      });
-    }
+    const { senderId, receiverId } = data;
+    socketIOChatObject.to(senderId).emit("message received", data);
+    socketIOChatObject.to(senderId).emit("chat list", data);
+    socketIOChatObject.to(receiverId).emit("message received", data);
+    socketIOChatObject.to(receiverId).emit("chat list", data);
   }
 }

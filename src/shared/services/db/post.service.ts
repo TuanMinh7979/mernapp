@@ -5,7 +5,7 @@ import {
   IQueryComplete,
   IQueryDeleted,
 } from "@root/features/post/interfaces/post.interface";
-import { IUserDocument } from "@user/interface/user.interface";
+import { IUserAuthDocument } from "@user/interface/user.interface";
 import { UserModel } from "@user/models/user.schema";
 import mongoose, { Query, UpdateQuery } from "mongoose";
 
@@ -19,7 +19,7 @@ class PostService {
     createdPost: IPostDocument
   ): Promise<void> {
     const post: Promise<IPostDocument> = PostModel.create(createdPost);
-    const user: UpdateQuery<IUserDocument> = UserModel.updateOne(
+    const user: UpdateQuery<IUserAuthDocument> = UserModel.updateOne(
       { _id: userId },
       { $inc: { postsCount: 1 } }
     );
@@ -36,12 +36,10 @@ class PostService {
     sort: Record<string, 1 | -1>
   ): Promise<IPostDocument[]> {
     let postQuery = {};
-    // if is a image or video post
+    // if is a image 
     // ? check later
     if (query?.imgId && query?.gifUrl) {
       postQuery = { $or: [{ imgId: { $ne: "" } }, { gifUrl: { $ne: "" } }] };
-    } else if (query?.videoId) {
-      postQuery = { $or: [{ videoId: { $ne: "" } }] };
     } else {
       postQuery = query;
     }
@@ -68,7 +66,7 @@ class PostService {
     const deletePost: Query<IQueryComplete & IQueryDeleted, IPostDocument> =
       PostModel.deleteOne({ _id: postId });
     // delete reactions here
-    const decrementPostCount: UpdateQuery<IUserDocument> = UserModel.updateOne(
+    const decrementPostCount: UpdateQuery<IUserAuthDocument> = UserModel.updateOne(
       { _id: userId },
       { $inc: { postsCount: -1 } }
     );

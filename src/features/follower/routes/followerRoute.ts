@@ -1,4 +1,4 @@
-import { authMiddleware } from "@global/helpers/aurth-middleware";
+import { authMiddleware } from "@global/middlewares/aurth-middleware";
 import express, { Router } from "express";
 import { Add } from "../controllers/follower-user";
 import { Remove } from "../controllers/unfollow-user";
@@ -15,7 +15,7 @@ class FollowerRoutes {
   public routes(): Router {
     // get all someone's fan
     this.router.get(
-      "/user/follower/:userId",
+      "/user/followers/:userId",
       authMiddleware.checkAuthencation,
       Get.prototype.userFollowers
     );
@@ -34,7 +34,7 @@ class FollowerRoutes {
     this.router.put(
       "/user/unfollow/:followeeId/:followerId",
       authMiddleware.checkAuthencation,
-      Remove.prototype.follower
+      Remove.prototype.remove
     );
     this.router.put(
       "/user/block/:otherId",

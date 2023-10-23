@@ -1,10 +1,9 @@
-import { authMiddleware } from "@global/helpers/aurth-middleware";
-import { Update } from "@user/controllers/change-password";
+import { authMiddleware } from "@global/middlewares/aurth-middleware";
 import { Get } from "@user/controllers/get-profile";
 import { Search } from "@user/controllers/search-user";
-import { Edit } from "@user/controllers/update-basic-info";
-import { UpdateSettings } from "@user/controllers/update-setting";
+import { Edit } from "@user/controllers/update";
 import express, { Router } from "express";
+
 
 class UserRoutes {
   private router: Router;
@@ -30,7 +29,7 @@ class UserRoutes {
       Get.prototype.profileByUserId
     );
     this.router.get(
-      "/user/profile/posts/:username/:userId/:uId",
+      "/user/profile/posts/:username/:userId",
       authMiddleware.checkAuthencation,
       Get.prototype.profileAndPosts
     );
@@ -44,11 +43,7 @@ class UserRoutes {
       authMiddleware.checkAuthencation,
       Search.prototype.user
     );
-    this.router.put(
-      "/user/profile/change-password",
-      authMiddleware.checkAuthencation,
-      Update.prototype.password
-    );
+
     this.router.put(
       "/user/profile/basic-info",
       authMiddleware.checkAuthencation,
@@ -62,7 +57,18 @@ class UserRoutes {
     this.router.put(
       "/user/profile/settings",
       authMiddleware.checkAuthencation,
-      UpdateSettings.prototype.notification
+      Edit.prototype.notification
+    );
+
+    this.router.put(
+      "/user/profile/change-password",
+      authMiddleware.checkAuthencation,
+      Edit.prototype.password
+    );
+    this.router.put(
+      "/user/profile/background",
+      authMiddleware.checkAuthencation,
+      Edit.prototype.updateBackgroundImage
     );
 
     return this.router;

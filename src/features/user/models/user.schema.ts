@@ -1,4 +1,4 @@
-import { IUserDocument } from '../interface/user.interface';
+import { IUserAuthDocument } from '../interface/user.interface';
 import mongoose, { model, Model, Schema } from 'mongoose';
 
 const userSchema: Schema = new Schema({
@@ -31,5 +31,5 @@ const userSchema: Schema = new Schema({
   bgImageId: { type: String, default: '' }
 });
 
-const UserModel: Model<IUserDocument> = model<IUserDocument>('User', userSchema, 'User');
+const UserModel: Model<IUserAuthDocument> = model<IUserAuthDocument>('User', userSchema, 'User');
 export { UserModel };

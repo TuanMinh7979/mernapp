@@ -1,31 +1,28 @@
-import { Request, Response } from 'express';
-import HTTP_STATUS from 'http-status-codes';
-import mongoose from 'mongoose';
-import { MessageCache } from '@service/redis/message.cache';
-import { IMessageData } from '@chat/interfaces/chat.interface';
-import { socketIOChatObject } from '@socket/chat';
+import { Request, Response } from "express";
+import HTTP_STATUS from "http-status-codes";
+import mongoose from "mongoose";
 
-import { joiValidation } from '@global/decorators/joi-validation.decorators';
-import { markChatSchema } from '@chat/schemes/chat';
-import { chatQueue } from '@service/queue/chat.queue';
+import { joiValidation } from "@global/decorators/joi-validation.decorators";
+import { markChatSchema } from "@chat/schemes/chat";
 
-const messageCache: MessageCache = new MessageCache();
+import { chatService } from "@service/db/chat.service";
+import { socketIOChatObject } from "@socket/chat";
 
 export class Update {
-    // * Params: 
-    // * Res:
+  // * Params:
+  // * Res:
   @joiValidation(markChatSchema)
   public async message(req: Request, res: Response): Promise<void> {
     const { senderId, receiverId } = req.body;
-    const updatedMessage: IMessageData = await messageCache.updateChatMessages(`${senderId}`, `${receiverId}`);
-    // ! Socket: 
-    socketIOChatObject.emit('message read', updatedMessage);
-    socketIOChatObject.emit('chat list', updatedMessage);
-    // ! Queue:
-    chatQueue.addChatJob('markMessagesAsReadInDB', {
-      senderId: new mongoose.Types.ObjectId(senderId),
-      receiverId: new mongoose.Types.ObjectId(receiverId)
-    });
-    res.status(HTTP_STATUS.OK).json({ message: 'Message marked as read' });
+    // ! Service
+    const lastedMessage = await chatService.markMessagesAsRead(
+      senderId,
+      receiverId
+    );
+    socketIOChatObject.to(senderId).emit("message read", lastedMessage);
+    socketIOChatObject.to(senderId).emit("chat list", lastedMessage);
+    socketIOChatObject.to(receiverId).emit("message read", lastedMessage);
+    socketIOChatObject.to(receiverId).emit("chat list", lastedMessage);
+    res.status(HTTP_STATUS.OK).json({ message: "Message marked as read" });
   }
 }

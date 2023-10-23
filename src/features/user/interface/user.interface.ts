@@ -1,14 +1,37 @@
-import mongoose, { Document } from 'mongoose';
+import mongoose, { Document } from "mongoose";
 
-
-export interface IUserDocument extends Document {
+// is UserModel interface + AuthModel interface
+export interface IUserAuthDocument extends Document {
   _id: string | mongoose.Types.ObjectId;
   authId: string | mongoose.Types.ObjectId;
+
   username?: string;
   email?: string;
   password?: string;
   avatarColor?: string;
-  uId?: string;
+
+  postsCount: number;
+  work: string;
+  school: string;
+  quote: string;
+  location: string;
+  blocked: mongoose.Types.ObjectId[];
+  blockedBy: mongoose.Types.ObjectId[];
+  followersCount: number;
+  followingCount: number;
+  notifications: INotificationSettings;
+  social: ISocialLinks;
+  bgImageVersion: string;
+  bgImageId: string;
+  profilePicture: string;
+  createdAt?: Date;
+
+
+}
+// is UserModel interface
+export interface IUserDocument extends Document {
+  _id: string | mongoose.Types.ObjectId;
+  authId: string | mongoose.Types.ObjectId;
   postsCount: number;
   work: string;
   school: string;
@@ -80,7 +103,7 @@ export interface IUserJob {
   keyOne?: string;
   keyTwo?: string;
   key?: string;
-  value?: string | INotificationSettings | IUserDocument;
+  value?: string | INotificationSettings | IUserAuthDocument;
 }
 
 export interface IEmailJob {
@@ -90,6 +113,6 @@ export interface IEmailJob {
 }
 
 export interface IAllUsers {
-  users: IUserDocument[];
+  users: IUserAuthDocument[];
   totalUsers: number;
 }

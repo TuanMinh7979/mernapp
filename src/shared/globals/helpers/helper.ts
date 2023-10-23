@@ -18,7 +18,7 @@ export class Helpers {
     try {
       return JSON.parse(prop);
     } catch (err: any) {
-      console.log("_________________________________LOG PARSE JSON ", prop);
+
 
       return prop;
     }

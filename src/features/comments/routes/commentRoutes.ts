@@ -1,6 +1,6 @@
 import { Add } from '@comment/controllers/add-comment';
 import { Get } from '@comment/controllers/get-comment';
-import { authMiddleware } from '@global/helpers/aurth-middleware';
+import { authMiddleware } from '@global/middlewares/aurth-middleware';
 import express, { Router } from 'express';
 
 

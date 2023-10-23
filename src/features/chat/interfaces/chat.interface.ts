@@ -1,7 +1,6 @@
-import mongoose, { Document } from 'mongoose';
-import { AuthPayload } from '@auth/interfaces/auth.interface';
-import { IReaction } from '@root/features/reactions/interfaces/reaction.interface';
-
+import mongoose, { Document } from "mongoose";
+import { AccessTokenPayload } from "@auth/interfaces/auth.interface";
+import { IReaction } from "@root/features/reactions/interfaces/reaction.interface";
 
 export interface IMessageDocument extends Document {
   _id: mongoose.Types.ObjectId;
@@ -20,7 +19,8 @@ export interface IMessageDocument extends Document {
   selectedImage: string;
   reaction: IReaction[];
   createdAt: Date;
-  deleteForMe: boolean;
+  // deleteForMe: boolean;
+  deletedByUsers: string[];
   deleteForEveryone: boolean;
 }
 
@@ -41,12 +41,13 @@ export interface IMessageData {
   selectedImage: string;
   reaction: IReaction[];
   createdAt: Date | string;
-  deleteForMe: boolean;
+  // deleteForMe: boolean;
   deleteForEveryone: boolean;
+  deletedByUsers:[]
 }
 
 export interface IMessageNotification {
-  currentUser: AuthPayload;
+  currentUser: AccessTokenPayload;
   message: string;
   receiverName: string;
   receiverId: string;

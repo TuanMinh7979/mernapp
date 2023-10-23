@@ -1,4 +1,4 @@
-import { authMiddleware } from "@global/helpers/aurth-middleware";
+import { authMiddleware } from "@global/middlewares/aurth-middleware";
 import { Delete } from "@notification/controllers/delete-noti";
 import { Get } from "@notification/controllers/get-noti";
 import { Update } from "@notification/controllers/update-noti";

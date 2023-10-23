@@ -1,5 +1,6 @@
 import { IFileImageDocument } from "@image/interface/image.interface";
 import { ImageModel } from "@image/models/image.schema";
+import { PostModel } from "@post/models/post.schema";
 import { UserModel } from "@user/models/user.schema";
 import mongoose from "mongoose";
 
@@ -16,6 +17,12 @@ class ImageService {
       { _id: userId },
       { $set: { profilePicture: url } }
     ).exec();
+    await PostModel.updateMany(
+      {
+        userId: userId,
+      },
+      { $set: { profilePicture: url } }
+    );
     await this.addImage(userId, imgId, imgVersion, "profile");
   }
   // *Param:
@@ -33,6 +40,7 @@ class ImageService {
   }
   // *Param:
   // *Res:void
+  // TODO refactor database and model
   public async addImage(
     userId: string,
     imgId: string,

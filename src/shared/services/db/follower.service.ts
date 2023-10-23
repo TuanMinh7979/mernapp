@@ -1,10 +1,10 @@
 import { IFollowerData } from "@root/features/follower/interfaces/follower.interface";
 import { FollowerModel } from "@root/features/follower/models/follower.schema";
-import { UserCache } from "@service/redis/user.cache";
+
 import { UserModel } from "@user/models/user.schema";
-import { map } from "lodash";
+
 import { BulkWriteResult } from "mongodb";
-import mongoose, { mongo } from "mongoose";
+import mongoose from "mongoose";
 import { ObjectId } from "mongodb";
 import {
   INotificationDocument,
@@ -12,10 +12,8 @@ import {
 } from "@notification/interfaces/notification.inteface";
 import { NotificationModel } from "@notification/models/notification.scheme";
 import { socketIONotificationObject } from "@socket/notification";
-import { notificationTemplate } from "@service/emails/template/notifications/notification-template";
-import { emailQueue } from "@service/queue/email.queue";
+
 import { userService } from "./user.service";
-const userCache: UserCache = new UserCache();
 
 class FollowerService {
   //* Params:
@@ -39,29 +37,29 @@ class FollowerService {
       followerId: followerObjectId,
     });
     // update userModel, update multiple documents on one mongo call
-    const users: Promise<BulkWriteResult> = UserModel.bulkWrite([
-      {
-        updateOne: {
-          filter: { _id: userId },
-          update: {
-            $inc: { followingCount: 1 },
+    const update2UserFollowProps: Promise<BulkWriteResult> =
+      UserModel.bulkWrite([
+        {
+          updateOne: {
+            filter: { _id: userId },
+            update: {
+              $inc: { followingCount: 1 },
+            },
           },
         },
-      },
-      {
-        updateOne: {
-          filter: { _id: followeeId },
-          update: {
-            $inc: { followersCount: 1 },
+        {
+          updateOne: {
+            filter: { _id: followeeId },
+            update: {
+              $inc: { followersCount: 1 },
+            },
           },
         },
-      },
-    ]);
+      ]);
     const response = await Promise.all([
-      users,
-      userService.getUserById(followeeId),
+      update2UserFollowProps,
+      userService.getUserAuthByUserId(followeeId),
     ]);
-    console.log("------------======>>>>>>", response);
 
     // ! CMN NOTI:
     if (response[1]?.notifications.follows && userId !== followeeId) {
@@ -83,27 +81,13 @@ class FollowerService {
       });
 
       //send to client with socketIO
+      // followeeId is id of target user
       // ! Socket:
-      socketIONotificationObject.emit("insert notification", notifications, {
-        followeeId,
-      });
-      //send to emailQueue
-      //  ! Email:
-      const templateParams: INotificationTemplate = {
-        username: response[1]?.username!, // userTo
-        message: `${username} follow on you`, //user From
-        header: "Notification of new Follow",
-      };
-
-      const template: string =
-        notificationTemplate.notificationMessageTemplate(templateParams);
-      // ! Queue:
-
-      emailQueue.addEmailJob("followNotiEmail", {
-        receiverEmail: response[1].email!,
-        template,
-        subject: "Follow Notification ",
-      });
+      socketIONotificationObject
+        .to(followeeId)
+        .emit("inserted notification", notifications, {
+          userTo: followeeId,
+        });
     }
   }
   //* Params:
@@ -117,26 +101,27 @@ class FollowerService {
     const followeeObjectId = new mongoose.Types.ObjectId(followeeId);
     const followerObjectId = new mongoose.Types.ObjectId(followerId);
 
-    const unfollow = FollowerModel.deleteOne({
+    const removeFollowRecord = FollowerModel.deleteOne({
       followeeId: followeeObjectId,
       followerId: followerObjectId,
     });
 
-    const users: Promise<BulkWriteResult> = UserModel.bulkWrite([
-      {
-        updateOne: {
-          filter: { _id: followerId },
-          update: { $inc: { followingCount: -1 } },
+    const update2UserFollowProps: Promise<BulkWriteResult> =
+      UserModel.bulkWrite([
+        {
+          updateOne: {
+            filter: { _id: followerId },
+            update: { $inc: { followingCount: -1 } },
+          },
         },
-      },
-      {
-        updateOne: {
-          filter: { _id: followeeId },
-          update: { $inc: { followersCount: -1 } },
+        {
+          updateOne: {
+            filter: { _id: followeeId },
+            update: { $inc: { followersCount: -1 } },
+          },
         },
-      },
-    ]);
-    await Promise.all([unfollow, users]);
+      ]);
+    await Promise.all([removeFollowRecord, update2UserFollowProps]);
   }
 
   //* Params:
@@ -152,37 +137,37 @@ class FollowerService {
           from: "User",
           localField: "followeeId",
           foreignField: "_id",
-          as: "followeeId",
+          as: "followee",
         },
       },
-      { $unwind: "$followeeId" },
+      { $unwind: "$followee" },
       {
         $lookup: {
           from: "Auth",
-          localField: "followeeId.authId",
+          localField: "followee.authId",
           foreignField: "_id",
-          as: "authId",
+          as: "auth",
         },
       },
-      { $unwind: "$authId" },
+      { $unwind: "$auth" },
       {
         $addFields: {
-          _id: "$followeeId._id", //UserModel._id
-          username: "$authId.username", //AuthModel.username
-          avatarColor: "$authId.avatarColor",
-          uId: "$authId.uId",
-          postCount: "$followeeId.postCount",
-          followersCount: "$followeeId.followersCount",
-          followingCount: "$followeeId.followingCount",
-          profilePicture: "$followeeId.profilePicture",
-          userProfile: "$followeeId.userProfile",
+          _id: "$followee._id", //UserModel._id
+          username: "$auth.username", //AuthModel.username
+          avatarColor: "$auth.avatarColor",
+
+          postsCount: "$followee.postsCount",
+          followersCount: "$followee.followersCount",
+          followingCount: "$followee.followingCount",
+          profilePicture: "$followee.profilePicture",
+          userProfile: "$followee.userProfile",
         },
       },
       {
         $project: {
-          authId: 0,
-          followerId: 0,
-          followeeId: 0,
+          auth: 0,
+          follower: 0,
+          followee: 0,
           createdAt: 0,
           __v: 0,
         },
@@ -221,8 +206,8 @@ class FollowerService {
           _id: "$followerId._id", //UserModel._id
           username: "$authId.username", //AuthModel.username
           avatarColor: "$authId.avatarColor",
-          uId: "$authId.uId",
-          postCount: "$followerId.postCount",
+
+          postsCount: "$followerId.postsCount",
           followersCount: "$followerId.followersCount",
           followingCount: "$followerId.followingCount",
           profilePicture: "$followerId.profilePicture",
@@ -246,6 +231,8 @@ class FollowerService {
   //* userId: userId of user to get all idol
   //* Res: String[] as list of idol ids string
   public async getFolloweesIds(userId: string): Promise<string[]> {
+
+
     const followee = await FollowerModel.aggregate([
       { $match: { followerId: new mongoose.Types.ObjectId(userId) } },
       {
@@ -255,7 +242,7 @@ class FollowerService {
         },
       },
     ]);
-    console.log(map(followee, (result) => result.followeeId.toString()));
+
     return followee.map((result) => result.followeeId.toString());
   }
 }

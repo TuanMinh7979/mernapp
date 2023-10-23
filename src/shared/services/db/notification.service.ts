@@ -50,7 +50,7 @@ class NotificationService {
               profilePicture: "$userFrom.profilePicture",
               username: "$authId.username",
               avatarColor: "$authId.avatarColor",
-              uId: "$authId.uId",
+      
             },
           },
         },

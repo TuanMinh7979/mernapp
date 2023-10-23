@@ -10,6 +10,7 @@ export interface IError {
     message: string;
     statusCode: number;
     status: string;
+    
 }
 
 export abstract class CustomError extends Error {
@@ -38,7 +39,7 @@ export class JoiRequestValidationError extends CustomError {
 
 }
 export class BadRequestError extends CustomError {
-    statusCode = HTTP_STATUS.BAD_REQUEST;
+    statusCode = HTTP_STATUS.BAD_REQUEST;//400
     status = 'error';
     constructor(message: string) {
         super(message);
@@ -46,7 +47,7 @@ export class BadRequestError extends CustomError {
 
 }
 export class NotFoundError extends CustomError {
-    statusCode = HTTP_STATUS.NOT_FOUND;
+    statusCode = HTTP_STATUS.NOT_FOUND;//404
     status = 'error';
     constructor(message: string) {
         super(message);
@@ -55,7 +56,7 @@ export class NotFoundError extends CustomError {
 }
 
 export class NotAuthorizedError extends CustomError {
-    statusCode = HTTP_STATUS.UNAUTHORIZED;
+    statusCode = HTTP_STATUS.UNAUTHORIZED;//401
     status = 'error';
     constructor(message: string) {
         super(message);

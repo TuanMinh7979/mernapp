@@ -5,23 +5,24 @@ import { postSchema, postWithImageSchema } from "../schemes/post.schemes";
 
 import { IPostDocument } from "../interfaces/post.interface";
 import { ObjectId, Types } from "mongoose";
-import { PostCache } from "@service/redis/post.cache";
+
 import { socketIOPostObject } from "@socket/post.socket";
-import { postQueue } from "@service/queue/post.queue";
+
 import { upload } from "@global/helpers/cloudinary-upload";
 import { BadRequestError } from "@global/helpers/error-handler";
-import { UploadApiErrorResponse, UploadApiResponse } from "cloudinary";
-import { NumericDictionary } from "lodash";
-import { imageQueue } from "@service/queue/image.queue";
-const postCache: PostCache = new PostCache();
+import {  UploadApiResponse } from "cloudinary";
+
+import { postService } from "@service/db/post.service";
+import { imageService } from "@service/db/image.service";
 export class Create {
-  // * Params: 
-  // * Res: void 
+  //  Req Body:
+  //  Res: void
   @joiValidation(postSchema)
   public async post(req: Request, res: Response): Promise<void> {
     const { post, bgColor, privacy, gifUrl, profilePicture, feelings } =
       req.body;
 
+    //  ! 1. create postModel from body and currentUser
     const postObjectId = new Types.ObjectId();
     const createdPost: IPostDocument = {
       _id: postObjectId,
@@ -43,39 +44,31 @@ export class Create {
       createdAt: new Date(),
       reactions: { like: 0, love: 0, happy: 0, sad: 0, wow: 0, angry: 0 },
     } as IPostDocument;
-    // ! Socket: 
+    // ! 2. Emit a socket "add post" to client
+    // ! Socket:
     socketIOPostObject.emit("add post", createdPost);
-    // ! Cache: 
-    await postCache.savePostToCache({
-      key: postObjectId,
-      currentUserId: `${req.currentUser!.userId}`,
-      uId: `${req.currentUser!.uId}`,
-      createdPost,
-    });
-    // ! Queue:
-    postQueue.addPostJob("addPostToDB", {
-      key: req.currentUser!.userId,
-      value: createdPost,
-    });
-   
+    await postService.addPostToDB(req.currentUser!.userId, createdPost);
     res
       .status(HTTP_STATUS.CREATED)
       .json({ message: "Post created successfully" });
   }
 
-  // * Params: 
+  // * Params:
   // * Res: void
   @joiValidation(postWithImageSchema)
-  public async postWithImage(req: Request, res: Response): Promise<void> {
+  public async postWithNewImage(req: Request, res: Response): Promise<void> {
     const { post, bgColor, privacy, gifUrl, profilePicture, feelings, image } =
       req.body;
-    // ! Upload: 
-    const result:UploadApiResponse = await upload(image) as UploadApiResponse ;
+    // ! 1. upload image
+    // ! Upload:
+    const result: UploadApiResponse = (await upload(
+      image
+    )) as UploadApiResponse;
     if (!result?.public_id) {
-      console.log(result)
+
       throw new BadRequestError(result.message);
     }
-
+    //  ! 2. create postModel with imgVersion, imgId from (1)
     const postObjectId = new Types.ObjectId();
     const createdPost: IPostDocument = {
       _id: postObjectId,
@@ -97,34 +90,24 @@ export class Create {
       createdAt: new Date(),
       reactions: { like: 0, love: 0, happy: 0, sad: 0, wow: 0, angry: 0 },
     } as IPostDocument;
-    // ! Socket: 
+    // ! 3. create socket "add post" with data is postModel
+    // ! Socket:
     socketIOPostObject.emit("add post", createdPost);
-    //  ! Cache:
-    await postCache.savePostToCache({
-      key: postObjectId,
-      currentUserId: `${req.currentUser!.userId}`,
-      uId: `${req.currentUser!.uId}`,
-      createdPost,
-    });
-    //  ! Queue:
-    postQueue.addPostJob("addPostToDB", {
-      key: req.currentUser!.userId,
-      value: createdPost,
-    });
-    imageQueue.addImageJob("addImageToDB", {
-      key: `${req.currentUser!.userId}`,
-      imgId: result.public_id,
-      imgVersion: result.version.toString(),
-    });
 
+    // ! 4. save postModel to db.Post
+    //  ! Service
+    await postService.addPostToDB(req.currentUser!.userId, createdPost);
+
+    // ! 5. create imageModel to db.Image, data :{curentUser.id, upload result from (1) , public_id and version}
+    // ! Service:
+    await imageService.addImage(
+      req.currentUser!.userId,
+      result.public_id,
+      result.version.toString(),
+      ""
+    );
     res
       .status(HTTP_STATUS.CREATED)
       .json({ message: "Post created with image successfully" });
   }
-
-
-  
-
-
 }
- 

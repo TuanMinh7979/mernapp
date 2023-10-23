@@ -1,31 +1,27 @@
+
 import { userService } from "@service/db/user.service";
-import { UserCache } from "@service/redis/user.cache";
-import { IUserDocument } from "@user/interface/user.interface";
 import { Request, Response } from "express";
 import HTTP_STATUS from "http-status-codes";
-const userCache = new UserCache();
+
+
 export class CurrentUser {
   public async read(req: Request, res: Response): Promise<void> {
-    let isUser = false;
-    let token = null;
-    let user = null;
-    // ! Cache:
-    // const cachedUser: IUserDocument = (await userCache.getUserFromCache(
-    //   `${req.currentUser?.userId}`
-    // )) as IUserDocument;
+    try {
+      const existingUser = await userService.getUserAuthByUserId(
+        req.currentUser!.userId
+      );
 
-    // const existingUser = cachedUser
-    //   ? cachedUser
-    //   : await userService.getUserById(req.currentUser?.userId as string);
-    // ! Service:
-    const existingUser = await userService.getUserById(
-      req.currentUser?.userId as string
-    );
-    if (Object.keys(existingUser).length) {
-      isUser = true;
-      token = req.session?.jwt;
-      user = existingUser;
+      if (!existingUser) {
+        res.status(400).json({ message: "This account does not exist." });
+        return;
+      }
+      res.status(HTTP_STATUS.OK).json({ user: existingUser });
+      return;
+    } catch (err: any) {
+      res.status(500).json({
+        message: "Error when get data of user",
+      });
+      return;
     }
-    res.status(HTTP_STATUS.OK).json({ token, isUser, user });
   }
 }

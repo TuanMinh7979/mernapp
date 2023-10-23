@@ -2,11 +2,11 @@ import { Request, Response } from "express";
 import HTTP_STATUS from "http-status-codes";
 export class SignOut {
   //   * Params:
-  // * Res: void 
+  // * Res: void
   public async update(req: Request, res: Response): Promise<void> {
-    req.session = null;
     res
+      .clearCookie("refreshtoken")
       .status(HTTP_STATUS.OK)
-      .json({ message: "logout success", user: {}, token: {} });
+      .json({ message: "logout success" });
   }
 }

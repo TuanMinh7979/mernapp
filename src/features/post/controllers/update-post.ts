@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { PostCache } from "@service/redis/post.cache";
+
 import HTTP_STATUS from "http-status-codes";
-import { postQueue } from "@service/queue/post.queue";
+
 import { socketIOPostObject } from "@socket/post.socket";
 import { IPostDocument } from "@post/interfaces/post.interface";
 import { postSchema, postWithImageSchema } from "@post/schemes/post.schemes";
@@ -9,10 +9,9 @@ import { joiValidation } from "@global/decorators/joi-validation.decorators";
 import { UploadApiErrorResponse, UploadApiResponse } from "cloudinary";
 import { upload } from "@global/helpers/cloudinary-upload";
 import { BadRequestError } from "@global/helpers/error-handler";
-import { imageQueue } from "@service/queue/image.queue";
+
 import { postService } from "@service/db/post.service";
 import { imageService } from "@service/db/image.service";
-const postCache: PostCache = new PostCache();
 
 export class Update {
   // * Params:
@@ -42,20 +41,14 @@ export class Update {
       imgVersion,
     } as IPostDocument;
 
-    // ! Cache:
-    const postUpdated: IPostDocument = await postCache.updatePostInCache(
-      postId,
-      updatedPost
-    );
-
-    // ! Queue:
-    postQueue.addPostJob("updatePostInDB", { key: postId, value: postUpdated });
-
+    // ! 1 update post in db.Post
     //  ! Service:
-    // const rs = await postService.editPost(postId, updatedPost);
-    // ! Socket:
+    const rs = await postService.editPost(postId, updatedPost);
 
-    socketIOPostObject.emit("update post", postUpdated, "posts");
+    // ! 2. send updatedPost to all client use emit  event "update post"
+    // ! Socket:
+    socketIOPostObject.emit("update post", rs, "posts");
+
     res.status(HTTP_STATUS.OK).json({ message: "Post updated successfully" });
   }
 
@@ -63,85 +56,19 @@ export class Update {
   // * Res: void
   // * Post with new image
   @joiValidation(postWithImageSchema)
-  public async postWithImage(req: Request, res: Response): Promise<void> {
-    const { imgId, imgVersion } = req.body;
-    if (imgId && imgVersion) {
-      Update.prototype.updatePost(req);
-    } else {
-      // ! Upload:
-      const result: UploadApiResponse =
-        await Update.prototype.addImageToExistingPost(req);
-      if (!result.public_id) {
-        // * result sẽ là lỗi nếu có lỗi xảy ra trong upload
-
-        throw new BadRequestError(result.message);
-      }
-    }
-    res.status(HTTP_STATUS.OK).json({ message: "Post updated successfully" });
-  }
-  // * Params:
-  // * Res: void
-  private async updatePost(req: Request): Promise<void> {
-    const {
-      post,
-      bgColor,
-      feelings,
-      privacy,
-      gifUrl,
-      imgVersion,
-      imgId,
-      profilePicture,
-      videoId,
-      videoVersion,
-    } = req.body;
+  public async postWithNewImage(req: Request, res: Response): Promise<void> {
+    const { post, bgColor, feelings, privacy, gifUrl, profilePicture, image } =
+      req.body;
     const { postId } = req.params;
-    const updatedPost: IPostDocument = {
-      post,
-      bgColor,
-      privacy,
-      feelings,
-      gifUrl,
-      profilePicture,
-      imgId: imgId ? imgId : "",
-      imgVersion: imgVersion ? imgVersion : "",
-    } as IPostDocument;
-
-    // ! Cache:
-    const postUpdated: IPostDocument = await postCache.updatePostInCache(
-      postId,
-      updatedPost
-    );
-
-    // ! Queue:
-    postQueue.addPostJob("updatePostInDB", { key: postId, value: postUpdated });
-    //  ! Service:
-    // const rs = await postService.editPost(postId, updatedPost);
-    // ! Socket:
-    socketIOPostObject.emit("update post", postUpdated, "posts");
-  }
-  // * Params:
-  // * Res: void
-  private async addImageToExistingPost(
-    req: Request
-  ): Promise<UploadApiResponse> {
-    const {
-      post,
-      bgColor,
-      feelings,
-      privacy,
-      gifUrl,
-      profilePicture,
-      image,
-      video,
-    } = req.body;
-    const { postId } = req.params;
+    // ! 1. update body.image
     // ! Upload:
-    const result: UploadApiResponse = (await upload(
+    const uploadResult: UploadApiResponse = (await upload(
       image
     )) as UploadApiResponse;
+    if (!uploadResult.public_id) {
+      // * uploadResult sẽ là lỗi nếu có lỗi xảy ra trong upload
 
-    if (!result?.public_id) {
-      return result;
+      throw new BadRequestError(uploadResult.message);
     }
     const updatedPost: IPostDocument = {
       post,
@@ -150,38 +77,25 @@ export class Update {
       feelings,
       gifUrl,
       profilePicture,
-      imgId: image ? result.public_id : "",
-      imgVersion: image ? result.version.toString() : "",
+      imgId: image ? uploadResult.public_id : "",
+      imgVersion: image ? uploadResult.version.toString() : "",
     } as IPostDocument;
 
-    // ! Cache:
-    const postUpdated: IPostDocument = await postCache.updatePostInCache(
-      postId,
-      updatedPost
+    //  ! Service:
+    // ! 2 .update postModel with body and upload result in (1)
+    const rs = await postService.editPost(postId, updatedPost);
+    // ! 3. emit socket "update post" to all client
+    // ! Socket:
+    socketIOPostObject.emit("update post", rs, "posts");
+    // ! Service:
+    // ! 4. create imageModel to db.Image, data :{curentUser.id, upload result from (1) , public_id and version}
+    await imageService.addImage(
+      req.currentUser!.userId,
+      uploadResult.public_id,
+      uploadResult.version.toString(),
+      ""
     );
 
-    // ! Queue:
-    postQueue.addPostJob("updatePostInDB", { key: postId, value: postUpdated });
-
-    //  ! Service:
-    // const rs = await postService.editPost(postId, updatedPost);
-    // ! Socket:
-    socketIOPostObject.emit("update post", postUpdated, "posts");
-
-    //  ! Queue:
-    imageQueue.addImageJob("addImageToDB", {
-      key: `${req.currentUser!.userId}`,
-      imgId: result.public_id,
-      imgVersion: result.version.toString(),
-    });
-
-    // ! Service:
-    // await imageService.addImage(
-    //   req.currentUser!.userId,
-    //   result.public_id,
-    //   result.version.toString(),
-    //   ""
-    // );
-    return result;
+    res.status(HTTP_STATUS.OK).json({ message: "Post updated successfully" });
   }
 }

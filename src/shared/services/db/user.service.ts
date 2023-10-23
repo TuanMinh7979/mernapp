@@ -6,121 +6,59 @@ import {
   INotificationSettings,
   ISearchUser,
   ISocialLinks,
+  IUserAuthDocument,
   IUserDocument,
 } from "@user/interface/user.interface";
 import { UserModel } from "@user/models/user.schema";
 import Logger from "bunyan";
 import mongoose from "mongoose";
 import { followerService } from "./follower.service";
-import { indexOf } from "lodash";
+
 const log: Logger = config.createLogger("UserService");
 class UserService {
-  public async addUserData(data: IUserDocument): Promise<void> {
+  public async create(data: IUserDocument): Promise<void> {
     await UserModel.create(data);
   }
 
   //   * Params:
   //   * authId:id of Auth collection
-  //   * Res: IUserDocument
-  public async getUserByAuthId(authId: string): Promise<IUserDocument> {
-    const users: IUserDocument[] = await UserModel.aggregate([
+  //   * Res: IUserAuthDocument
+  public async getUserByAuthId(authId: string): Promise<IUserAuthDocument> {
+    const users: IUserAuthDocument[] = await UserModel.aggregate([
       { $match: { authId: new mongoose.Types.ObjectId(authId) } },
-      // {
-      //   $lookup: {
-      //     from: "Auth",
-      //     localField: "authId",
-      //     foreignField: "_id",
-      //     as: "authId",
-      //   },
-      // },
-      // { $unwind: "$authId" },
-      // { $project: this.aggregateProject() },
     ]);
     return users[0];
   }
   //   * Params:
   //   * userId:_id of User collection
-  //   * Res: IUserDocument
-  public async getUserById(userId: string): Promise<IUserDocument> {
-    log.info("getUserById.params1: ", userId);
-    const users: IUserDocument[] = await UserModel.aggregate([
+  //   * Res: IUserAuthDocument
+  public async getUserAuthByUserId(userId: string): Promise<IUserAuthDocument> {
+    const users: IUserAuthDocument[] = await UserModel.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(userId) } },
       {
         $lookup: {
           from: "Auth",
           localField: "authId",
           foreignField: "_id",
-          as: "authId",
+          as: "auth",
         },
       },
-      { $unwind: "$authId" },
+      { $unwind: "$auth" },
       { $project: this.aggregateProject() },
     ]);
-    log.info("getUserById=> ", users);
 
     return users[0];
   }
 
-  //   * Params:
-  //   * uId:uId of Auth collection
-  //   * Res: IUserDocument
-  public async getUserByUId(uId: string): Promise<IUserDocument> {
-    const users: IUserDocument[] = await AuthModel.aggregate([
-      {
-        $match: {
-          uId: uId,
-        },
-      },
-
-      {
-        $lookup: {
-          from: "User",
-          localField: "_id",
-          foreignField: "authId",
-          as: "userId",
-        },
-      },
-
-      {
-        $unwind: "$userId",
-      },
-
-      {
-        $project: {
-          _id: "$userId._id",
-          username: 1,
-          uId: 1,
-          email: 1,
-          avatarColor: 1,
-          createdAt: 1,
-
-          postsCount: "$userId.postsCount",
-          work: "$userId.work",
-          school: "$userId.school",
-          quote: "$userId.quote",
-          location: "$userId.location",
-          blocked: "$userId.blocked",
-          blockedBy: "$userId.blockedBy",
-          followersCount: "$userId.followersCount",
-          followingCount: "$userId.followingCount",
-          notifications: "$userId.notifications",
-          social: "$userId.social",
-          bgImageVersion: "$userId.bgImageVersion",
-          bgImageId: "$userId.bgImageId",
-          profilePicture: "$userId.profilePicture",
-        },
-      },
-    ]);
-    return users[0];
-  }
   private aggregateProject() {
     return {
       _id: 1,
-      username: "$authId.username",
-      uId: "$authId.uId",
-      email: "$authId.email",
-      avatarColor: "$authId.avatarColor",
-      createdAt: "$authId.createdAt",
+      username: "$auth.username",
+      authId: "$auth._id",
+      email: "$auth.email",
+      avatarColor: "$auth.avatarColor",
+      createdAt: "$auth.createdAt",
+    
       postsCount: 1,
       work: 1,
       school: 1,
@@ -146,8 +84,10 @@ class UserService {
     userId: string,
     skip: number,
     limit: number
-  ): Promise<IUserDocument[]> {
-    const users: IUserDocument[] = await UserModel.aggregate([
+  ): Promise<IUserAuthDocument[]> {
+
+
+    const users: IUserAuthDocument[] = await UserModel.aggregate([
       { $match: { _id: { $ne: new mongoose.Types.ObjectId(userId) } } },
       { $skip: skip },
       { $limit: limit },
@@ -157,12 +97,14 @@ class UserService {
           from: "Auth",
           localField: "authId",
           foreignField: "_id",
-          as: "authId",
+          as: "auth",
         },
       },
-      { $unwind: "$authId" },
+      { $unwind: "$auth" },
       { $project: this.aggregateProject() },
     ]);
+
+
     return users;
   }
 
@@ -174,9 +116,9 @@ class UserService {
   // *Params:
   // *Res:
   // get strange user to add follow for current user(aka a fan)
-  public async getRandomUsers(userId: string): Promise<IUserDocument[]> {
-    const randomUsers: IUserDocument[] = [];
-    const strangeUsers: IUserDocument[] = await UserModel.aggregate([
+  public async getRandomUsers(userId: string): Promise<IUserAuthDocument[]> {
+    const randomUsers: IUserAuthDocument[] = [];
+    const strangeUsers: IUserAuthDocument[] = await UserModel.aggregate([
       { $match: { _id: { $ne: new mongoose.Types.ObjectId(userId) } } },
       {
         $lookup: {
@@ -193,7 +135,7 @@ class UserService {
           username: "$authId.username",
           email: "$authId.email",
           avatarColor: "$authId.avatarColor",
-          uId: "$authId.uId",
+
           createdAt: "$authId.createdAt",
         },
       },
@@ -208,7 +150,6 @@ class UserService {
     const followers: string[] = await followerService.getFolloweesIds(
       `${userId}`
     );
-    console.log(followers);
 
     for (const strangeUser of strangeUsers) {
       const followerIndex = followers.indexOf(strangeUser._id.toString());
@@ -234,16 +175,14 @@ class UserService {
           as: "user",
         },
       },
-      {
-        $unwind: "$user",
-      },
+      { $unwind: "$user" },
       {
         $project: {
           _id: "$user._id",
           username: 1,
           email: 1,
           avatarColor: 1,
-          profilePicture: 1,
+          profilePicture: "$user.profilePicture",
         },
       },
     ]);
@@ -269,6 +208,17 @@ class UserService {
           school: info["school"],
           quote: info["quote"],
           location: info["location"],
+        },
+      }
+    ).exec();
+  }
+  public async updateBackgroundImage(userId: string, body: any): Promise<void> {
+    await UserModel.updateOne(
+      { _id: userId },
+      {
+        $set: {
+          bgImageVersion: body["bgImageVersion"],
+          bgImageId: body["bgImageId"],
         },
       }
     ).exec();

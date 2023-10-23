@@ -1,9 +1,10 @@
-import { IFollowers } from '@root/features/follower/interfaces/follower.interface';
-import { Server, Socket } from 'socket.io';
-
+import { config } from "@root/config";
+import { IFollowers } from "@root/features/follower/interfaces/follower.interface";
+import Logger from "bunyan";
+import { Server, Socket } from "socket.io";
 
 export let socketIOFollowerObject: Server;
-
+const log: Logger = config.createLogger("FollowerSocket");
 export class SocketIOFollowerHandler {
   private io: Server;
 
@@ -12,11 +13,5 @@ export class SocketIOFollowerHandler {
     socketIOFollowerObject = io;
   }
 
-  public listen(): void {
-    this.io.on('connection', (socket: Socket) => {
-      socket.on('unfollow user', (data: IFollowers) => {
-        this.io.emit('remove follower', data);
-      });
-    });
-  }
+
 }

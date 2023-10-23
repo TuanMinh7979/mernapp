@@ -1,9 +1,9 @@
 import { authRoutes } from "@auth/routes/authRoutes";
 import { Application } from "express";
 
-import { currentUserRoutes } from "@auth/routes/currentRoutes";
-import { authMiddleware } from "@global/helpers/aurth-middleware";
-import { serverAdapter } from "@service/queue/base.queue";
+import { refreshTokenRoutes } from "@auth/routes/refreshTokenRoutes";
+import { authMiddleware } from "@global/middlewares/aurth-middleware";
+
 import { postRoutes } from "./features/post/routes/postRoutes";
 import { reactionRoutes } from "./features/reactions/routes/reactionRoutes";
 import { commentRoutes } from "@comment/routes/commentRoutes";
@@ -13,19 +13,15 @@ import { imageRoutes } from "@image/routes/imageRoutes";
 import { chatRoutes } from "@chat/routes/chatRoutes";
 import { userRoutes } from "@user/routes/userRoute";
 import { healthRoutes } from "@user/routes/healthRoute";
+import { checkRoutes } from "./features/check/check/checkRoute";
 const BASE_PATH = "/api/v1";
 export default (app: Application) => {
   const routes = () => {
-    app.use("/queues", serverAdapter.getRouter());
-
     app.use("", healthRoutes.health());
-    app.use("", healthRoutes.env());
-    // app.use("", healthRoutes.instance());
-    // app.use("", healthRoutes.fiboRoutes());
 
     app.use(BASE_PATH, authRoutes.routes());
-    app.use(BASE_PATH, authRoutes.signoutRoute());
-    app.use(BASE_PATH, authMiddleware.verifyUser, currentUserRoutes.routes());
+
+    app.use(BASE_PATH, refreshTokenRoutes.routes());
     app.use(BASE_PATH, authMiddleware.verifyUser, postRoutes.routes());
     app.use(BASE_PATH, authMiddleware.verifyUser, reactionRoutes.routes());
     app.use(BASE_PATH, authMiddleware.verifyUser, commentRoutes.routes());

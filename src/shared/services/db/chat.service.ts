@@ -42,7 +42,8 @@ class ChatService {
 
   //  * Params:
   //  * Res:
-  public async getUserConversationList(
+  //  func get conversation and last message data to show in  chat sidebar
+  public async getUserConversationAndLstMessageList(
     userId: ObjectId
   ): Promise<IMessageData[]> {
     const messages: IMessageData[] = await MessageModel.aggregate([
@@ -72,10 +73,13 @@ class ChatService {
           selectedImage: "$result.selectedImage",
           reaction: "$result.reaction",
           createdAt: "$result.createdAt",
+          deleteForEveryone: "$result.deleteForEveryone",
+          deletedByUsers: "$result.deletedByUsers",
         },
       },
       { $sort: { createdAt: 1 } },
     ]);
+
     return messages;
   }
 
@@ -104,19 +108,25 @@ class ChatService {
   //  * Res:
   public async markMessageAsDeleted(
     messageId: string,
-    type: string
-  ): Promise<void> {
+    type: string,
+    userId: string
+  ): Promise<IMessageData> {
+    
+
     if (type === "deleteForMe") {
-      await MessageModel.updateOne(
+      return (await MessageModel.findOneAndUpdate(
         { _id: messageId },
-        { $set: { deleteForMe: true } }
-      ).exec();
+
+        { $push: { deletedByUsers: userId } },
+        { new: true }
+      )) as IMessageData;
     } else {
       // delete for all user
-      await MessageModel.updateOne(
+      return (await MessageModel.findOneAndUpdate(
         { _id: messageId },
-        { $set: { deleteForMe: true, deleteForEveryone: true } }
-      ).exec();
+        { $set: { deletedByUsers: [], deleteForEveryone: true } },
+        { new: true }
+      )) as IMessageData;
     }
   }
 
@@ -125,7 +135,7 @@ class ChatService {
   public async markMessagesAsRead(
     senderId: ObjectId,
     receiverId: ObjectId
-  ): Promise<void> {
+  ): Promise<IMessageData> {
     const query = {
       $or: [
         { senderId, receiverId, isRead: false },
@@ -134,6 +144,16 @@ class ChatService {
     };
     // update for sender and receiver, user update many
     await MessageModel.updateMany(query, { $set: { isRead: true } }).exec();
+    const latestItem: IMessageData = (await MessageModel.findOne({
+      $or: [
+        { senderId, receiverId },
+        { senderId: receiverId, receiverId: senderId },
+      ],
+    }).sort({
+      createdAt: -1,
+    })) as unknown as IMessageData;
+
+    return latestItem;
   }
 
   //  * Params:
@@ -143,16 +163,20 @@ class ChatService {
     senderName: string,
     reaction: string,
     type: "add" | "remove"
-  ): Promise<void> {
-    await MessageModel.findOneAndUpdate(
+  ): Promise<any> {
+    const rs = await MessageModel.findOneAndUpdate(
       { _id: messageId, reaction: { $elemMatch: { senderName: senderName } } },
-      { $pull: { reaction: { senderName } } }
+      { $pull: { reaction: { senderName } } },
+      { new: true }
     );
-    if (type === "add") {
-      await MessageModel.updateOne(
+    if (type == "remove") {
+      return rs;
+    } else {
+      return await MessageModel.findOneAndUpdate(
         { _id: messageId },
-        { $push: { reaction: { senderName, type: reaction } } }
-      ).exec();
+        { $push: { reaction: { senderName, type: reaction } } },
+        { new: true }
+      );
     }
   }
 }

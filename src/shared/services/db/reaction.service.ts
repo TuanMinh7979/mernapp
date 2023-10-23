@@ -1,7 +1,6 @@
 import { Helpers } from "@global/helpers/helper";
 import {
-  INotificationDocument,
-  INotificationTemplate,
+  INotificationDocument
 } from "@notification/interfaces/notification.inteface";
 import { NotificationModel } from "@notification/models/notification.scheme";
 import { IPostDocument } from "@post/interfaces/post.interface";
@@ -10,13 +9,13 @@ import {
   IQueryReaction,
   IReactionDocument,
   IReactionJob,
+  
 } from "@root/features/reactions/interfaces/reaction.interface";
 import { ReactionModel } from "@root/features/reactions/models/reaction.shema";
-import { notificationTemplate } from "@service/emails/template/notifications/notification-template";
-import { emailQueue } from "@service/queue/email.queue";
-import { UserCache } from "@service/redis/user.cache";
+
+
 import { socketIONotificationObject } from "@socket/notification";
-import { IUserDocument } from "@user/interface/user.interface";
+import { IUserAuthDocument } from "@user/interface/user.interface";
 
 import { omit } from "lodash";
 import mongoose, { ObjectId } from "mongoose";
@@ -24,14 +23,12 @@ import { userService } from "./user.service";
 import Logger from "bunyan";
 import { config } from "@root/config";
 
-const userCache: UserCache = new UserCache();
 const log: Logger = config.createLogger("ReactService");
 class ReactionService {
   //   * Params:
   //   * reactionData
-  //   * Res: IUserDocument
+  //   * Res: IUserAuthDocument
   public async addReactionDataToDB(reactionData: IReactionJob): Promise<void> {
-    log.info("-----------------------");
     const {
       postId,
       userTo,
@@ -50,29 +47,32 @@ class ReactionService {
     }
 
     // Add and Update (upsert: true)
-    const updatedReaction: [IUserDocument, IReactionDocument, IPostDocument] =
-      (await Promise.all([
-        userService.getUserById(userTo!),
-        ReactionModel.replaceOne(
-          { postId, type: previousReaction, username },
-          updatedReactionObject,
-          { upsert: true }
-        ),
-        PostModel.findOneAndUpdate(
-          { _id: postId },
-          {
-            $inc: {
-              [`reactions.${previousReaction}`]: -1,
-              [`reactions.${type}`]: 1,
-            },
+    const updatedReaction: [
+      IUserAuthDocument,
+      IReactionDocument,
+      IPostDocument
+    ] = (await Promise.all([
+      userService.getUserAuthByUserId(userTo!),
+      ReactionModel.replaceOne(
+        { postId, type: previousReaction, username },
+        updatedReactionObject,
+        { upsert: true }
+      ),
+      PostModel.findOneAndUpdate(
+        { _id: postId },
+        {
+          $inc: {
+            [`reactions.${previousReaction}`]: -1,
+            [`reactions.${type}`]: 1,
           },
-          { new: true }
-        ),
-      ])) as unknown as [IUserDocument, IReactionDocument, IPostDocument];
-    log.info(updatedReaction);
+        },
+        { new: true }
+      ),
+    ])) as unknown as [IUserAuthDocument, IReactionDocument, IPostDocument];
+
     // ! CMN NOTI:
     if (updatedReaction[0].notifications.reactions && userTo !== userFrom) {
-      log.info();
+  
       const notificationModel: INotificationDocument = new NotificationModel();
       const notifications = await notificationModel.insertNotification({
         userFrom: userFrom!,
@@ -89,21 +89,12 @@ class ReactionService {
         gifUrl: updatedReaction[2].gifUrl!,
         reaction: type!,
       });
-      socketIONotificationObject.emit("insert notification", notifications, {
-        userTo,
-      });
-      const templateParams: INotificationTemplate = {
-        username: updatedReaction[0].username!,
-        message: `${username} reacted to your post.`,
-        header: "Post Reaction Notification",
-      };
-      const template: string =
-        notificationTemplate.notificationMessageTemplate(templateParams);
-      emailQueue.addEmailJob("reactionsEmail", {
-        receiverEmail: updatedReaction[0].email!,
-        template,
-        subject: "Post reaction notification",
-      });
+      // userTo is id of target user
+      socketIONotificationObject
+        .to(userTo as string)
+        .emit("inserted notification", notifications, {
+          userTo,
+        });
     }
   }
 
@@ -169,6 +160,7 @@ class ReactionService {
     const reactions: IReactionDocument[] = await ReactionModel.aggregate([
       { $match: { username: Helpers.firstLetterUppercase(username) } },
     ]);
+    
     return reactions;
   }
 }

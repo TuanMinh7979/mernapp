@@ -22,6 +22,7 @@ const notificationSchema: Schema = new Schema({
   createdAt: { type: Date, default: Date.now() },
 });
 
+// function insert and return all notifications of a specific user id
 notificationSchema.methods.insertNotification = async function (
   body: INotification
 ) {

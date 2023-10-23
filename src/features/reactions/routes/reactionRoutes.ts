@@ -1,4 +1,4 @@
-import { authMiddleware } from "@global/helpers/aurth-middleware";
+import { authMiddleware } from "@global/middlewares/aurth-middleware";
 import express, { Router } from "express";
 import { Add } from "../controllers/add-reaction";
 import { Remove } from "../controllers/remove-reaction";

@@ -2,6 +2,7 @@ import { IReactions } from '@root/features/reactions/interfaces/reaction.interfa
 import { ObjectId } from 'mongodb';
 import mongoose, { Document } from 'mongoose';
 
+//  for Post Model 
 export interface IPostDocument extends Document {
   _id?: string | mongoose.Types.ObjectId;
   userId: string;
@@ -36,7 +37,7 @@ export interface IGetPostsQuery {
 export interface ISavePostToCache {
   key: ObjectId | string;
   currentUserId: string;
-  uId: string;
+
   createdPost: IPostDocument;
 }
 

@@ -12,19 +12,19 @@ import {
 } from "@notification/interfaces/notification.inteface";
 import { NotificationModel } from "@notification/models/notification.scheme";
 import { PostModel } from "@post/models/post.schema";
-import { notificationTemplate } from "@service/emails/template/notifications/notification-template";
-import { emailQueue } from "@service/queue/email.queue";
-import { UserCache } from "@service/redis/user.cache";
+
+
 import { socketIONotificationObject } from "@socket/notification";
 import mongoose from "mongoose";
 import { userService } from "./user.service";
 
-const userCache: UserCache = new UserCache();
+
 // * Params:
 // * username: is name of user who comment to the post
 // * Res: void
 class CommentService {
   public async addCommentToDB(commentData: ICommentJob): Promise<void> {
+    // userTo is id of target user
     const { postId, userTo, userFrom, comment, username } = commentData;
     const comments: Promise<ICommentDocument> = CommentsModel.create(comment);
     const post = PostModel.findOneAndUpdate(
@@ -37,9 +37,8 @@ class CommentService {
       { new: true }
     );
 
-    //! Cache:
-    // const user = userCache.getUserFromCache(userTo);
-    const targetUser = userService.getUserByUId(userTo);
+
+    const targetUser = userService.getUserAuthByUserId(userTo);
 
     const response = await Promise.all([comments, post, targetUser]);
     // ! CMN NOTI:
@@ -63,26 +62,11 @@ class CommentService {
 
       //send to client with socketIO
       // ! Socket:
-      socketIONotificationObject.emit("insert notification", notifications, {
-        userTo,
+      socketIONotificationObject.to(userTo).emit("inserted notification", notifications, {
+        userTo
       });
-      //send to emailQueue
-      //  ! Email:
-      const templateParams: INotificationTemplate = {
-        username: response[2].username!, // email of poster
-        message: `${username} commented on your post`,
-        header: "Notification of new comment",
-      };
-
-      const template: string =
-        notificationTemplate.notificationMessageTemplate(templateParams);
-      // ! Queue:
-
-      emailQueue.addEmailJob("commentNotiEmail", {
-        receiverEmail: response[2].email!,
-        template,
-        subject: "Comment Notification ",
-      });
+    
+ 
     }
   }
   // * Params:
@@ -116,7 +100,7 @@ class CommentService {
         },
         { $project: { _id: 0 } },
       ]);
-    console.log(commentUserNameListOfAPost);
+    
 
     return commentUserNameListOfAPost;
   }

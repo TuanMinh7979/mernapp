@@ -1,4 +1,4 @@
-import { IUserDocument } from '@user/interface/user.interface';
+import { IUserAuthDocument } from '@user/interface/user.interface';
 import { ObjectId } from 'mongodb';
 import mongoose, { Document } from 'mongoose';
 
@@ -26,11 +26,11 @@ export interface IFollowerData {
   followersCount: number;
   followingCount: number;
   profilePicture: string;
-  postCount: number;
+  postsCount: number;
   username: string;//in AuthModel
-  uId: string; // in AuthModel
+
   _id?: mongoose.Types.ObjectId;
-  userProfile?: IUserDocument;
+  userProfile?: IUserAuthDocument;
 }
 
 export interface IFollowerJobData {

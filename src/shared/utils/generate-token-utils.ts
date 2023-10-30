@@ -13,7 +13,6 @@ export const generateRefreshToken = (payload: object, res: Response) => {
   });
 
   res.cookie("refreshtoken", rftk, {
-    httpOnly: true,
     sameSite: "none",
     secure: true,
     path: `/api/refresh_token`,

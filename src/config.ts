@@ -15,7 +15,7 @@ class Config {
 
   public REFRESH_SECRET: string | undefined;
   public RF_TOKEN_EXP: string | undefined;
-  public RF_TOKEN_EXP_TIME: string | undefined;
+
 
   constructor() {
     this.ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || "1234";
@@ -30,7 +30,7 @@ class Config {
 
     this.REFRESH_SECRET = process.env.REFRESH_SECRET || "";
     this.RF_TOKEN_EXP = process.env.RF_TOKEN_EXP || "";
-    this.RF_TOKEN_EXP_TIME = process.env.RF_TOKEN_EXP_TIME || "";
+
   }
 
   public createLogger(name: string): bunyan {

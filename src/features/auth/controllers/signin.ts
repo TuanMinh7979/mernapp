@@ -16,7 +16,6 @@ import {
   generateRefreshToken,
 } from "@root/shared/utils/generate-token-utils";
 
-
 export class SignIn {
   @joiValidation(loginSchema)
   public async read(req: Request, res: Response): Promise<void> {
@@ -50,7 +49,13 @@ export class SignIn {
       avatarColor: existAuth.avatarColor,
     });
 
-    generateRefreshToken({ userId: existUser._id.toString() }, res);
+    // in production: 
+    // we need to get and show rf token in client, but can not do that with httpOnly= true
+    // so use a rftk copy store in local storage(express only and better get tk from cookies)
+    const rftkInLocalStorage = generateRefreshToken(
+      { userId: existUser._id.toString() },
+      res
+    );
 
     const userAuthData: IUserAuthDocument = {
       ...existUser,
@@ -65,6 +70,7 @@ export class SignIn {
       message: "User login successfully",
       user: userAuthData,
       token: accessToken,
+      rfToken: rftkInLocalStorage,
     });
   }
 }

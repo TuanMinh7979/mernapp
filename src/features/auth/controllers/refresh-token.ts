@@ -37,9 +37,10 @@ export class RefreshToken {
         avatarColor: existingUser.avatarColor,
       });
 
-      res
-        .status(HTTP_STATUS.OK)
-        .json({ token: access_token, user: existingUser });
+      res.status(HTTP_STATUS.OK).json({
+        token: access_token,
+        user: { ...existingUser, rfTokenExp: decoded.exp },
+      });
     } catch (err: any) {
       res
         .clearCookie("refreshtoken")

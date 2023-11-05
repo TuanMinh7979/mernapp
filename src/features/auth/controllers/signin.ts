@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 import { Request, Response } from "express";
 import { joiValidation } from "@global/decorators/joi-validation.decorators";
 import { authService } from "@service/db/auth.service";
-import { IAuthDocument } from "@auth/interfaces/auth.interface";
+import { IAuthDocument, IDecodedToken } from "@auth/interfaces/auth.interface";
 import { BadRequestError } from "@global/helpers/error-handler";
 
 import HTTP_STATUS from "http-status-codes";
@@ -11,6 +11,7 @@ import { IUserAuthDocument } from "@user/interface/user.interface";
 
 import { loginSchema } from "@auth/schemes/signin";
 import { userService } from "@service/db/user.service";
+import jwt from "jsonwebtoken";
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -49,14 +50,16 @@ export class SignIn {
       avatarColor: existAuth.avatarColor,
     });
 
-    // in production: 
+    // in production:
     // we need to get and show rf token in client, but can not do that with httpOnly= true
     // so use a rftk copy store in local storage(express only and better get tk from cookies)
-    const rftkInLocalStorage = generateRefreshToken(
+    const newRfToken = generateRefreshToken(
       { userId: existUser._id.toString() },
       res
     );
-
+    const decoded = <IDecodedToken>(
+      jwt.verify(newRfToken, `${process.env.REFRESH_SECRET}`)
+    );
     const userAuthData: IUserAuthDocument = {
       ...existUser,
 
@@ -68,9 +71,8 @@ export class SignIn {
 
     res.status(HTTP_STATUS.OK).json({
       message: "User login successfully",
-      user: userAuthData,
+      user: { ...userAuthData, rfTokenExp: decoded.exp },
       token: accessToken,
-      // rfToken: rftkInLocalStorage,
     });
   }
 }

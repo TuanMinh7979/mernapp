@@ -1,8 +1,9 @@
+import  jwt  from "jsonwebtoken";
 
+import { IDecodedToken } from "@auth/interfaces/auth.interface";
 import { userService } from "@service/db/user.service";
 import { Request, Response } from "express";
 import HTTP_STATUS from "http-status-codes";
-
 
 export class CurrentUser {
   public async read(req: Request, res: Response): Promise<void> {
@@ -15,7 +16,14 @@ export class CurrentUser {
         res.status(400).json({ message: "This account does not exist." });
         return;
       }
-      res.status(HTTP_STATUS.OK).json({ user: existingUser });
+
+      let decoded = <IDecodedToken>(
+        jwt.verify(req.cookies.refreshtoken, `${process.env.REFRESH_SECRET}`)
+      );
+
+      res
+        .status(HTTP_STATUS.OK)
+        .json({ user: { ...existingUser, rfTokenExp: decoded.exp } });
       return;
     } catch (err: any) {
       res.status(500).json({

@@ -70,7 +70,7 @@ export class SignIn {
       message: "User login successfully",
       user: userAuthData,
       token: accessToken,
-      rfToken: rftkInLocalStorage,
+      // rfToken: rftkInLocalStorage,
     });
   }
 }

@@ -31,7 +31,9 @@ export class Add {
       result.public_id,
       result.version.toString()
     );
-    res.status(HTTP_STATUS.OK).json({ message: "Image added successfully" });
+    res
+      .status(HTTP_STATUS.OK)
+      .json({ message: "Image added successfully", url });
   }
   //    * Params:
   //    * Res:

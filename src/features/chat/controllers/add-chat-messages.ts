@@ -35,8 +35,6 @@ export class Add {
       selectedImage,
     } = req.body;
 
-
-
     const messageObjectId: ObjectId = new ObjectId();
     const conversationObjectId: ObjectId = !conversationId
       ? new ObjectId()
@@ -52,10 +50,7 @@ export class Add {
     let fileUrl = "";
     if (selectedImage.length) {
       const result: UploadApiResponse = (await upload(
-        req.body.selectedImage,
-        req.currentUser!.userId,
-        true,
-        true
+        req.body.selectedImage
       )) as UploadApiResponse;
       if (!result?.public_id) {
         throw new BadRequestError(result.message);
@@ -67,8 +62,6 @@ export class Add {
     let isTargetOnline = false;
 
     if (conversationId) {
-
-
       const targetSocketId = userOnRoom.get(receiverId) as string;
       const targetSocket =
         socketIOChatObject.sockets.sockets.get(targetSocketId);
@@ -76,7 +69,6 @@ export class Add {
       if (targetSocket) {
         // check if target socket has joined the room or not
         isTargetOnline = targetSocket.rooms.has(`room_${conversationId}`);
-   
       }
     }
 
@@ -100,7 +92,6 @@ export class Add {
       deleteForEveryone: false,
       deletedByUsers: [],
     };
-
 
     // ! 4.emit socket "chat list", "messgage receied" to sender and received(4 emit)
     Add.prototype.emitSocketIOEvent(messageData);

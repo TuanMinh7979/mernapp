@@ -36,13 +36,16 @@ class PostService {
     sort: Record<string, 1 | -1>
   ): Promise<IPostDocument[]> {
     let postQuery = {};
-    // if is a image 
+    // if is a image
     // ? check later
     if (query?.imgId && query?.gifUrl) {
       postQuery = { $or: [{ imgId: { $ne: "" } }, { gifUrl: { $ne: "" } }] };
     } else {
       postQuery = query;
     }
+
+    console.log("---------skip ", skip, "lim", limit);
+
     const posts: IPostDocument[] = await PostModel.aggregate([
       { $match: postQuery },
       { $sort: sort },
@@ -58,6 +61,13 @@ class PostService {
     const count: number = await PostModel.find({}).countDocuments();
     return count;
   }
+
+  public async postsWithImageCount(): Promise<number> {
+    const count: number = await PostModel.find({
+      $or: [{ imgId: { $ne: "" } }, { gifUrl: { $ne: "" } }],
+    }).countDocuments();
+    return count;
+  }
   //   * Params:
   //* postId:id of post
   //* userId: user._id of author
@@ -66,10 +76,8 @@ class PostService {
     const deletePost: Query<IQueryComplete & IQueryDeleted, IPostDocument> =
       PostModel.deleteOne({ _id: postId });
     // delete reactions here
-    const decrementPostCount: UpdateQuery<IUserAuthDocument> = UserModel.updateOne(
-      { _id: userId },
-      { $inc: { postsCount: -1 } }
-    );
+    const decrementPostCount: UpdateQuery<IUserAuthDocument> =
+      UserModel.updateOne({ _id: userId }, { $inc: { postsCount: -1 } });
     await Promise.all([deletePost, decrementPostCount]);
   }
   //   * Params:

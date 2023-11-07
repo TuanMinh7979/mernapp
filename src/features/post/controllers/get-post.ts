@@ -5,14 +5,14 @@ import { IPostDocument } from "@post/interfaces/post.interface";
 import { postService } from "@service/db/post.service";
 import { ServerError } from "@global/helpers/error-handler";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 8;
 export class Get {
   //  Params:
   //  Res: void
   public async posts(req: Request, res: Response): Promise<void> {
     try {
-
       const { page } = req.params;
+
       // ! 1. create skip and limit from constant PAGE_SIZE and page
       const skip: number = (parseInt(page) - 1) * PAGE_SIZE;
       const limit: number = PAGE_SIZE * parseInt(page);
@@ -46,8 +46,9 @@ export class Get {
       limit,
       { createdAt: -1 }
     );
+    const cnt = await postService.postsWithImageCount();
     res
       .status(HTTP_STATUS.OK)
-      .json({ message: "All posts with images", posts });
+      .json({ message: "All posts with images", posts, cnt });
   }
 }

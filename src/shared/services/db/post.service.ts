@@ -44,8 +44,6 @@ class PostService {
       postQuery = query;
     }
 
-    console.log("---------skip ", skip, "lim", limit);
-
     const posts: IPostDocument[] = await PostModel.aggregate([
       { $match: postQuery },
       { $sort: sort },

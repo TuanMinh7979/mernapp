@@ -1,7 +1,5 @@
 import { Helpers } from "@global/helpers/helper";
-import {
-  INotificationDocument
-} from "@notification/interfaces/notification.inteface";
+import { INotificationDocument } from "@notification/interfaces/notification.inteface";
 import { NotificationModel } from "@notification/models/notification.scheme";
 import { IPostDocument } from "@post/interfaces/post.interface";
 import { PostModel } from "@post/models/post.schema";
@@ -9,10 +7,8 @@ import {
   IQueryReaction,
   IReactionDocument,
   IReactionJob,
-  
 } from "@root/features/reactions/interfaces/reaction.interface";
 import { ReactionModel } from "@root/features/reactions/models/reaction.shema";
-
 
 import { socketIONotificationObject } from "@socket/notification";
 import { IUserAuthDocument } from "@user/interface/user.interface";
@@ -59,7 +55,7 @@ class ReactionService {
         { upsert: true }
       ),
       PostModel.findOneAndUpdate(
-        { _id: postId },
+        { _id: postId, [`reactions.${previousReaction}`]: { $gt: 0 } },
         {
           $inc: {
             [`reactions.${previousReaction}`]: -1,
@@ -72,7 +68,6 @@ class ReactionService {
 
     // ! CMN NOTI:
     if (updatedReaction[0].notifications.reactions && userTo !== userFrom) {
-  
       const notificationModel: INotificationDocument = new NotificationModel();
       const notifications = await notificationModel.insertNotification({
         userFrom: userFrom!,
@@ -160,7 +155,7 @@ class ReactionService {
     const reactions: IReactionDocument[] = await ReactionModel.aggregate([
       { $match: { username: Helpers.firstLetterUppercase(username) } },
     ]);
-    
+
     return reactions;
   }
 }

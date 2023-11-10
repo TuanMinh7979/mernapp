@@ -3,7 +3,6 @@ import { ObjectId } from "mongodb";
 import HTTP_STATUS from "http-status-codes";
 import { joiValidation } from "@global/decorators/joi-validation.decorators";
 
-
 import { addReactionSchema } from "../schemes/reaction";
 import {
   IReactionDocument,
@@ -12,12 +11,13 @@ import {
 
 import { reactionService } from "@service/db/reaction.service";
 
-
 export class Add {
   // * Params:
   // * Res: void
   @joiValidation(addReactionSchema)
   public async reaction(req: Request, res: Response): Promise<void> {
+
+
     // *userTo : id of post creator
     const {
       userTo,
@@ -45,7 +45,6 @@ export class Add {
       previousReaction,
       reactionObject,
     };
-
 
     //  ! Service:
     await reactionService.addReactionDataToDB(databaseReactionData);

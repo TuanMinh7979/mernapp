@@ -55,7 +55,8 @@ class ReactionService {
         { upsert: true }
       ),
       PostModel.findOneAndUpdate(
-        { _id: postId, [`reactions.${previousReaction}`]: { $gt: 0 } },
+        { _id: postId },
+
         {
           $inc: {
             [`reactions.${previousReaction}`]: -1,

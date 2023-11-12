@@ -1,5 +1,5 @@
 import { config } from "@root/config";
-import { IFollowers } from "@root/features/follower/interfaces/follower.interface";
+
 import Logger from "bunyan";
 import { Server, Socket } from "socket.io";
 
@@ -12,6 +12,4 @@ export class SocketIOFollowerHandler {
     this.io = io;
     socketIOFollowerObject = io;
   }
-
-
 }

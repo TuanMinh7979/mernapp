@@ -25,8 +25,6 @@ export interface IUserAuthDocument extends Document {
   bgImageId: string;
   profilePicture: string;
   createdAt?: Date;
-
-
 }
 // is UserModel interface
 export interface IUserDocument extends Document {
@@ -85,10 +83,11 @@ export interface ISearchUser {
   avatarColor: string;
 }
 
-export interface ISocketData {
+export interface IBlockSocketData {
   blockedUser: string;
   blockedBy: string;
 }
+
 
 export interface ILogin {
   userId: string;

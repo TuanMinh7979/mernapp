@@ -5,7 +5,7 @@ import { IPostDocument } from "@post/interfaces/post.interface";
 import { postService } from "@service/db/post.service";
 import { ServerError } from "@global/helpers/error-handler";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 9;
 export class Get {
   //  Params:
   //  Res: void

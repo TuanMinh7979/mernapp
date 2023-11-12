@@ -50,10 +50,11 @@ class NotificationService {
               profilePicture: "$userFrom.profilePicture",
               username: "$authId.username",
               avatarColor: "$authId.avatarColor",
-      
             },
           },
         },
+
+        { $sort: { createdAt: -1 } },
       ]);
     return notifications;
   }
